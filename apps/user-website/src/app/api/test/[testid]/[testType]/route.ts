@@ -12,8 +12,11 @@ export const GET = async (
     };
   }
 ) => {
+  console.log("GET request for test", params.testid);
+  console.log("testType", params.testType);
   try {
     if (params.testType === "TIMER" || params.testType === "NOTIMER") {
+      console.log("Fetching test data for testType:", params.testType);
       const testData = await prisma.userTestDetail.findUnique({
         where: {
           id: params.testid,
@@ -48,7 +51,7 @@ export const GET = async (
           createdAt: true,
         },
       });
-
+      console.log("testData", testData);
       if (!testData) {
         return NextResponse.json({
           msg: "Invalid test id",

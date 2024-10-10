@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "../globals.css";
 import NavBar from "../../components/NavBar/NavBar";
 import { Providers } from "@/src/providers/Providers";
+import { TestProvider } from "@/components/context/TestContext";
+import { SimulationTestProvider } from "@/components/context/SimulationTestContext";
 
 const geistSans = localFont({
   src: "../fonts/GeistVF.woff",
@@ -29,8 +31,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="bg-white dark:bg-gray-900 text-black dark:text-white">
         <Providers>
-          <NavBar />
-          {children}
+          <TestProvider>
+            <SimulationTestProvider>
+              <NavBar />
+              {children}
+            </SimulationTestProvider>
+          </TestProvider>
         </Providers>
       </body>
     </html>

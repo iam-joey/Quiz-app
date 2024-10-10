@@ -1,10 +1,16 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import TestResults from "@/src/components/TestResults/page";
+import { useParams, useSearchParams } from "next/navigation";
+import TestResults, { TestResultsProps } from "@/src/components/TestResults/page";
 
 export default function TestResultsPage() {
   const params = useParams();
-  //@ts-ignore
-  return <TestResults testid={params.testId as string} questions={[]} />;
+  const searchParams = useSearchParams();
+  
+  const testResultsProps: TestResultsProps = {
+    testId: params.testId as string,
+    testType: searchParams.get('testType') as string
+  };
+
+  return <TestResults {...testResultsProps} />;
 }
