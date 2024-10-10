@@ -10,18 +10,31 @@ import { authOptions } from "@/src/lib/auth";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
-type UserTest = {
-  id: string;
-  correctAnswers: string;
-  isCompleted: boolean;
+type NormalTest = {
   category: {
     name: string;
   };
-  numberOfQuestions: string;
+  correctAnswers: number | null;
+  id: string;
+  isCompleted: boolean;
+  numberOfQuestions: number;
+  testType: "TIMER" | "NOTIMER";
+};
+
+type SimulationTest = {
+  category: {
+    name: string;
+  };
+  correctAnswers: number;
+  id: string;
+  isCompleted: boolean;
+  numberOfQuestions: number;
+  testType: "SIMULATION";
 };
 
 interface UserTestData {
-  UserTestDetail: UserTest[];
+  SimulationTestDetail: SimulationTest[];
+  UserTestDetail: NormalTest[];
 }
 
 export default function TestList() {
@@ -29,12 +42,17 @@ export default function TestList() {
   const router = useRouter();
   //@ts-ignore
   const session = useSession(authOptions);
-  const handleTestClick = (testId: string, isCompleted: boolean) => {
+
+  const handleTestClick = (
+    testId: string,
+    isCompleted: boolean,
+    testType: string
+  ) => {
     if (isCompleted) {
-      router.push(`/test/${testId}/results`);
+      router.push(`/test/${testId}/results?testType=${testType}`);
       return;
     }
-    router.push(`/test/${testId}`);
+    router.push(`/test/${testId}?testType=${testType}`);
   };
 
   const fetchData = async () => {
@@ -54,6 +72,7 @@ export default function TestList() {
         toast.error(`${result.msg}`);
         return;
       }
+      console.log("fetching the results", result.data);
       setTest(result.data);
       toast.dismiss(loadingId);
       toast.success(`${result.msg}`);
@@ -73,55 +92,109 @@ export default function TestList() {
 
   return (
     <div className="container mx-auto p-4">
-      {/* <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
-        Test Results
-      </h1> */}
       {test?.UserTestDetail && test.UserTestDetail.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {test.UserTestDetail.map((test) => (
-            <Card
-              key={test.id}
-              className="cursor-pointer hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden"
-              onClick={() => handleTestClick(test.id, test.isCompleted)}
-            >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-gray-800 dark:text-gray-200">
-                    {test.category.name}
-                  </h3>
-                  <Badge
-                    //@ts-ignore
-                    variant={test.isCompleted ? "success" : "destructive"}
-                    className="text-xs"
-                  >
-                    {test.isCompleted ? (
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                    ) : (
-                      <XCircle className="w-3 h-3 mr-1" />
-                    )}
-                    {test.isCompleted ? "Completed" : "Incomplete"}
-                  </Badge>
-                </div>
-                <div className="mt-2 mb-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Score:{" "}
-                    <span className="font-semibold">
-                      {test.correctAnswers || "0"}/{test.numberOfQuestions}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex justify-end">
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-4">Normal Tests</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {test.UserTestDetail.map((test) => (
+              <Card
+                key={test.id}
+                className="cursor-pointer hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden"
+                onClick={() =>
+                  handleTestClick(test.id, test.isCompleted, test.testType)
+                }
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-gray-800 dark:text-gray-200">
+                      {test.category.name}
+                    </h3>
+                    <Badge
+                      variant={test.isCompleted ? "success" : "destructive"}
+                      className="text-xs"
+                    >
+                      {test.isCompleted ? (
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                      ) : (
+                        <XCircle className="w-3 h-3 mr-1" />
+                      )}
+                      {test.isCompleted ? "Completed" : "Incomplete"}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Score:{" "}
+                      <span className="font-semibold">
+                        {test.correctAnswers || "0"}/{test.numberOfQuestions}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button variant="ghost" size="sm" className="text-xs">
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       ) : (
         <p className="text-center text-gray-600 dark:text-gray-400">
-          You haven't participated in any tests.
+          You haven't participated in any normal tests.
+        </p>
+      )}
+
+      {test?.SimulationTestDetail && test.SimulationTestDetail.length > 0 ? (
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Simulation Tests</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {test.SimulationTestDetail.map((test) => (
+              <Card
+                key={test.id}
+                className="cursor-pointer hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden"
+                onClick={() =>
+                  handleTestClick(test.id, test.isCompleted, test.testType)
+                }
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-gray-800 dark:text-gray-200">
+                      {test.category.name}
+                    </h3>
+                    <Badge
+                      variant={test.isCompleted ? "success" : "destructive"}
+                      className="text-xs"
+                    >
+                      {test.isCompleted ? (
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                      ) : (
+                        <XCircle className="w-3 h-3 mr-1" />
+                      )}
+                      {test.isCompleted ? "Completed" : "Incomplete"}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Score:{" "}
+                      <span className="font-semibold">
+                        {test.correctAnswers}/{test.numberOfQuestions}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button variant="ghost" size="sm" className="text-xs">
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="text-center text-gray-600 dark:text-gray-400 mt-6">
+          You haven't participated in any simulation tests.
         </p>
       )}
     </div>

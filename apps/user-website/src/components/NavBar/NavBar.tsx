@@ -49,8 +49,8 @@ function NavBar() {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
-                  // router.push("/profile");
-                  toast.info("Coming soon");
+                  router.push("/profile");
+                  // toast.info("Coming soon");
                 }}
               >
                 Proifle

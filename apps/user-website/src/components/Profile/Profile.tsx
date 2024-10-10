@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,6 +28,9 @@ import {
   GraduationCapIcon,
   MailIcon,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { authOptions } from "@/src/lib/auth";
+import { toast } from "sonner";
 
 enum Program {
   MEDICINE = "MEDICINE",
@@ -44,7 +47,7 @@ interface UserProfile {
   promotion: string | null;
   profileCompleted: boolean;
   email: string | null;
-  emailVerified: Date | null;
+  // emailVerified: Date | null;
   image: string | null;
 }
 
@@ -59,10 +62,11 @@ export default function UserProfile() {
     promotion: "2022",
     profileCompleted: true,
     email: "jane.doe@example.com",
-    emailVerified: new Date("2023-01-01"),
+    // emailVerified: new Date("2023-01-01"),
     image: "/placeholder.svg?height=200&width=200",
   });
-
+  //@ts-ignore
+  const session = useSession(authOptions);
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserProfile({ ...userProfile, [e.target.name]: e.target.value });
   };
@@ -75,6 +79,23 @@ export default function UserProfile() {
     console.log("Saving profile:", userProfile);
     setIsEditing(false);
   };
+
+  useEffect(() => {
+    if (session.data?.user) {
+      setUserProfile({
+        name: session.data.user.name!,
+        email: session.data.user.email!,
+        image: session.data.user.image!,
+        studyProgram: Program.MEDICINE,
+        speciality: "Cardiology",
+        workPlace: "Central Hospital",
+        university: "Medical University",
+        promotion: "2022",
+        profileCompleted: true,
+        // emailVerified: true,
+      });
+    }
+  }, [session.data?.user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -107,7 +128,10 @@ export default function UserProfile() {
             <div className="mt-4 md:mt-0">
               <Button
                 variant={isEditing ? "secondary" : "default"}
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={
+                  () => toast.info("Coming Soon")
+                  // setIsEditing(!isEditing)}
+                }
                 className="shadow-md hover:shadow-lg transition-shadow dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
               >
                 {isEditing ? "Cancel" : "Edit Profile"}
@@ -257,6 +281,7 @@ export default function UserProfile() {
           </CardFooter>
         )}
       </Card>
+      {/* {JSON.stringify(session.data?.user)} */}
     </div>
   );
 }

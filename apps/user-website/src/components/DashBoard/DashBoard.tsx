@@ -38,7 +38,6 @@ export default function Home() {
   const { setTestData } = useTestContext();
   const { setSimulationTestData } = useSimulationTestContext();
 
-
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -78,7 +77,6 @@ export default function Home() {
           : "NOTIMER",
     };
 
-
     if (isExamSimulation) {
       testConfig = {
         ...testConfig,
@@ -109,7 +107,7 @@ export default function Home() {
           } else {
             setTestData(testId);
           }
-          localStorage.setItem("testData_"+testId.id, JSON.stringify(testId));
+          localStorage.setItem("testData_" + testId.id, JSON.stringify(testId));
           router.push(`/test/${testId.id}`);
         } else {
           console.error("Failed to create test:", response.data.error);
@@ -294,7 +292,8 @@ export default function Home() {
               </p>
               <button
                 onClick={() => {
-                  router.push("/history");
+                  // router.push("/history");
+                  toast.info("need little fix");
                 }}
                 className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
