@@ -29,12 +29,21 @@ export const GET = async (
             },
             id: true,
             numberOfQuestions: true,
+            testType: true,
           },
         },
         SimulationTestDetail: {
           select: {
             isCompleted: true,
             correctAnswers: true,
+            category: {
+              select: {
+                name: true,
+              },
+            },
+            id: true,
+            numberOfQuestions: true,
+            testType: true,
           },
         },
       },

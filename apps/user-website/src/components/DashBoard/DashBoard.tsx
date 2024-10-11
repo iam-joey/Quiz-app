@@ -38,7 +38,6 @@ export default function Home() {
   const { setTestData } = useTestContext();
   const { setSimulationTestData } = useSimulationTestContext();
 
-
   useEffect(() => {
     setTestData(null);
     setSimulationTestData(null);
@@ -89,7 +88,6 @@ export default function Home() {
           ? "TIMER"
           : "NOTIMER",
     };
-
 
     if (isExamSimulation) {
       testConfig = {
@@ -308,7 +306,8 @@ export default function Home() {
               </p>
               <button
                 onClick={() => {
-                  router.push("/history");
+                  // router.push("/history");
+                  toast.info("need little fix");
                 }}
                 className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >

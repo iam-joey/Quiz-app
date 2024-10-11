@@ -45,7 +45,7 @@ export const POST = async (req: NextRequest) => {
       const simulationTestDetail = await prisma.simulationTestDetail.create({
         data: {
           userId: testDetails.userId,
-          duration: testDetails.isTimed ? testDetails.duration : 0,
+          duration: testDetails.duration,
           isCompleted: false,
           testType: testDetails.testType,
           numberOfQuestions:
