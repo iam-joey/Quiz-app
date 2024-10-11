@@ -253,7 +253,7 @@ export default function TestPage() {
       setIsSubmitting(false);
     }
   };
-
+//submit confirmation
   const confirmSubmit = () => {
     setShowConfirmDialog(false);
     handleSubmit(true);
@@ -263,10 +263,10 @@ export default function TestPage() {
     setIsSubmitting(false);
   };
 
+  //questions fetching
+
   useEffect(() => {
     const fetchQuestions = async () => {
-        console.log("Fetching testData from API");
-        alert("Fetching testData from API");
         const testId = params.testId as string;
         const testType = searchParams.get("type") || "NOTIMER"; // Default to NOTIMER if not specified
         const response = await fetch(`/api/test/${testId}/${testType}`);
