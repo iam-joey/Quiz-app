@@ -51,7 +51,7 @@ export const GET = async (
           createdAt: true,
         },
       });
-      console.log("testData", testData);
+      console.log("testData from api", testData);
       if (!testData) {
         return NextResponse.json({
           msg: "Invalid test id",

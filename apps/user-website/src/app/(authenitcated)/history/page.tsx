@@ -61,6 +61,7 @@ export default function TestList() {
       const response = await fetch(
         `/api/testhistory/${(session.data?.user as any)?.id}`
       );
+      console.log("response", response);
       if (!response.ok) {
         toast.dismiss(loadingId);
         toast.error("Failed fetching data");
@@ -110,6 +111,7 @@ export default function TestList() {
                       {test.category.name}
                     </h3>
                     <Badge
+                      //@ts-ignore
                       variant={test.isCompleted ? "success" : "destructive"}
                       className="text-xs"
                     >
@@ -163,9 +165,11 @@ export default function TestList() {
                       {test.category.name}
                     </h3>
                     <Badge
+                      //@ts-ignore
                       variant={test.isCompleted ? "success" : "destructive"}
                       className="text-xs"
                     >
+                    
                       {test.isCompleted ? (
                         <CheckCircle className="w-3 h-3 mr-1" />
                       ) : (

@@ -18,11 +18,12 @@ interface SimulationTestData {
   testType: string;
   createdAt: string;
   duration: number;
+  isCompleted: boolean;
 }
 
 interface SimulationTestContextType {
   simulationTestData: SimulationTestData | null;
-  setSimulationTestData: (data: SimulationTestData) => void;
+  setSimulationTestData: (data: SimulationTestData | null) => void;
 }
 
 const SimulationTestContext = createContext<SimulationTestContextType | undefined>(undefined);

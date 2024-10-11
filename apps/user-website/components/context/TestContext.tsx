@@ -19,6 +19,7 @@ type TestData = {
   testType: string;
   createdAt: string;
   duration: number;
+  isCompleted: boolean;
 };
 
 type TestContextType = {

@@ -32,7 +32,7 @@ interface SimulationTestResult {
     answer: string[];
   }>;
   multipleQuestion: Array<{
-    question: string;
+    title: string;
     choice: Array<{
       id: string;
       text: string;
@@ -72,19 +72,33 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
         if (data.err) {
           throw new Error(data.msg);
         }
-        if(testType === "TIMER" || testType === "NOTIMER") {
-        const { question, userAnswers, score, correctAnswers, incorrectAnswers, totalTimeTaken, accuracy } = data.data;
-        setQuestions(question);
 
-        setTestResult({
-          correctAnswers,
-          score,
-          incorrectAnswers,
-          totalTimeTaken,
-          accuracy,
-          userAnswers,
-          question
-        });
+        // Check if the returned data matches the expected test type
+        if (data.data.testType && data.data.testType !== testType) {
+          console.warn(`Mismatch in test types. Expected: ${testType}, Received: ${data.data.testType}`);
+          // Handle the mismatch (e.g., update the UI or fetch the correct data)
+          // For now, we'll update the testType to match the received data
+          testType = data.data.testType;
+        }
+
+        if(testType === "TIMER" || testType === "NOTIMER") {
+          console.log("Timer test result");
+
+          const { question, userAnswers, score, correctAnswers, incorrectAnswers, totalTimeTaken, accuracy } = data.data;
+          console.log("question", question);
+          
+          setTestResult({
+            correctAnswers,
+            score,
+            incorrectAnswers,
+            totalTimeTaken,
+            accuracy,
+            userAnswers,
+            question
+          });
+          
+          setQuestions(question);
+          console.log("questions set:", question);
         } else if(testType === "SIMULATION") {
           setSimulationTestResult(data.data);
         }
@@ -99,7 +113,14 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
     };
 
     fetchTestData();
-  }, [testId]);
+  }, [testId, testType]);
+
+  // New useEffect to log testResult when it changes
+  useEffect(() => {
+    if (testResult) {
+      console.log("testResult", testResult);
+    }
+  }, [testResult]);
 
   if (isLoading) {
     return (
@@ -121,7 +142,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
       <div className="max-w-3xl w-full px-4">
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Test Results</h2>
-          {testType === "TIMER" || testType === "NOTIMER" && testResult && (
+          {(testType === "TIMER" || testType === "NOTIMER") && testResult && (
             <>
               <p>Total Questions: {testResult.question.length}</p>
               <p>Correct Answers: {testResult.correctAnswers}</p>
@@ -208,7 +229,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                     <h3 className="text-xl font-semibold mb-2">
                       Question {simulationTestResult.singleQuestion.length + index + 1} (Multiple)
                     </h3>
-                    <p className="mb-2">{question.question}</p>
+                    <p className="mb-2">{question.title}</p>
                     <div className="space-y-2">
                       {question.choice.map((choice) => (
                         <div
