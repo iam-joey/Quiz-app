@@ -267,16 +267,6 @@ export default function TestPage() {
 
   useEffect(() => {
     const fetchQuestions = async () => {
-        const testId = params.testId as string;
-        const testType = searchParams.get("type") || "NOTIMER"; // Default to NOTIMER if not specified
-        const response = await fetch(`/api/test/${testId}/${testType}`);
-        const data = await response.json();
-        if(data.data.isCompleted){
-          setIsLoading(false);
-          router.push(`/test/${testId}/results?testType=${testType}`);
-          return;
-        }
-
         if(questions.length > 0){
           return;
         }
@@ -372,6 +362,12 @@ export default function TestPage() {
         console.log("data from api", data);
         if (data.err) {
           throw new Error(data.msg);
+        }
+
+        if(data.data.isCompleted){
+          setIsLoading(false);
+          router.push(`/test/${testId}/results?testType=${testType}`);
+          return;
         }
         
         if (testType === "SIMULATION") {
@@ -524,9 +520,12 @@ export default function TestPage() {
       `testProgress_${params.testId}_answers`,
       `testProgress_${params.testId}_remainingTime`,
       `testData_${params.testId}`,
+      `simulationTestData_${params.testId}`,
     ];
 
     keys.forEach(key => localStorage.removeItem(key));
+    setSimulationTestData(null);
+    setTestData(null);
   };
 
   if (questions.length === 0) {
