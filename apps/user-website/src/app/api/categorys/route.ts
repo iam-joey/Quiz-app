@@ -7,6 +7,11 @@ export const GET = async (req: NextRequest) => {
       select: {
         id: true,
         name: true,
+        question: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
     return NextResponse.json({

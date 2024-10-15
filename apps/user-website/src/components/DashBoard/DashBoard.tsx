@@ -71,29 +71,20 @@ export default function Home() {
 
   const startTest = (isExamSimulation = false) => {
     setIsStartingTest(true);
-    console.log("isExamSimulation", isExamSimulation);
-    console.log("isTimedTest", isTimedTest);
-    console.log("testDuration", testDuration);
-    console.log("questionCount", questionCount);
-    console.log("selectedCategory", selectedCategory);
     let testConfig = {
       userId: (session.data?.user as any)?.id,
       isTimed: isTimedTest !== null ? isTimedTest : true,
-      duration: testDuration ? Math.round(testDuration * 3600) : 0, // Convert hours to seconds and round
+      duration: testDuration ? Math.round(testDuration * 3600) : 0,
       numberOfQuestions: questionCount || 0,
       categoryId: selectedCategory || "",
-      testType: isExamSimulation
-        ? "SIMULATION"
-        : isTimedTest
-          ? "TIMER"
-          : "NOTIMER",
+      testType: isExamSimulation ? "SIMULATION" : isTimedTest ? "TIMER" : "NOTIMER",
     };
 
     if (isExamSimulation) {
       testConfig = {
         ...testConfig,
         isTimed: true,
-        duration: 4 * 3600, // 4 hours in seconds
+        duration: 4 * 3600,
         numberOfQuestions: 200,
       };
     }
@@ -104,41 +95,32 @@ export default function Home() {
       return;
     }
 
-    console.log("testConfig", testConfig);
-
-    axios
-      .post("/api/createtest", testConfig)
+    axios.post("/api/createtest", testConfig)
       .then((response) => {
-        console.log(response.data.err);
         if (!response.data.err) {
           const testId = response.data.data;
-          console.log("testId", testId);
-
-          const testIdWithIsCompleted = {...testId,isCompleted:false};
+          const testIdWithIsCompleted = {...testId, isCompleted: false};
+          
           if (isExamSimulation) {
-            console.log("testId", testIdWithIsCompleted);
             setSimulationTestData(testIdWithIsCompleted);
           } else {
-            setTestData(testIdWithIsCompleted)
+            setTestData(testIdWithIsCompleted);
           }
-          localStorage.setItem("testData_"+testId.id, JSON.stringify(testIdWithIsCompleted));
+          
+          localStorage.setItem(`testData_${testId.id}`, JSON.stringify(testIdWithIsCompleted));
           router.push(`/test/${testId.id}?type=${testConfig.testType}`);
         } else {
           console.error("Failed to create test:", response.data.error);
+          toast.error("Failed to create test. Please try again.");
         }
       })
       .catch((error) => {
         console.error("Error creating test:", error);
+        toast.error("An error occurred. Please try again.");
       })
-      .finally(() => {
-        setShowTimerDialog(false);
-        setShowTimeSettingDialog(false);
-        setSelectedCategory(null);
-        setQuestionCount(null);
-        setIsTimedTest(false);
-        setTestDuration(null);
-        setShowExamSimulationDialog(false);
-      });
+      // .finally(() => {
+      //   setIsStartingTest(false);
+      // });
   };
 
   const updateTestDuration = () => {
@@ -732,7 +714,7 @@ export default function Home() {
       {showTimeSettingDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full relative">
-            <button
+                        <button
               onClick={() => {
                 setShowTimeSettingDialog(false);
                 setIsTimedTest(false);
