@@ -298,7 +298,7 @@ export async function deleteCategory(id: string) {
       where: { id },
       data: {
         deleted: true,
-        name: "deleted_" + findId.name,
+        name: "deleted_" + findId.name + "_" + Date.now(),
       },
     });
 

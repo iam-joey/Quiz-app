@@ -11,21 +11,18 @@ import {
 } from "@/components/ui/dialog";
 import { PlusCircle } from "lucide-react";
 import { createTopic } from "@/src/lib/actions";
-import { useEffect, useState } from "react";
-import { toast } from "sonner"; // Assuming you're using Sonner for toasts
-
+import { useState } from "react";
+import { toast } from "sonner";
 export default function AddTopicForm() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const result = await createTopic(formData);
     console.log("result is", result);
-    // Handle success or warning messages with toast
     if (!result.err) {
-      toast.success(result.msg || "Topic created successfully!"); // Ensure the message is present
-      setIsDialogOpen(false); // Close the dialog on success
+      toast.success(result.msg || "Topic created successfully!");
+      setIsDialogOpen(false);
     } else {
       toast.warning(result.msg);
     }

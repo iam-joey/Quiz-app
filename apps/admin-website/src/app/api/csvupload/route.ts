@@ -7,7 +7,6 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const categoryId = formData.get("categoryId") as string;
-
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
@@ -39,7 +38,6 @@ export async function POST(request: NextRequest) {
         Boolean
       );
 
-      // Create each choice individually to capture IDs
       const createdChoices = await Promise.all(
         choices.map((choiceText) =>
           prisma.choices.create({
@@ -51,20 +49,15 @@ export async function POST(request: NextRequest) {
         )
       );
 
-      // Process the answer field to get the correct choice IDs
-      const answerTexts = isMultipleAnswer
-        ? answer.split(",").map((a: any) => a.trim())
-        : [answer];
-      const correctChoiceIds = answerTexts
-        .map((answerText: string) => {
-          const matchingChoice = createdChoices.find(
-            (choice) => choice.text === answerText
-          );
-          return matchingChoice ? matchingChoice.id : null;
-        })
+      const answerIndices = answer
+        .split(",")
+        .map((index: any) => parseInt(index.trim()) - 1);
+      const correctChoiceIds = answerIndices
+        .map((index: any) =>
+          createdChoices[index] ? createdChoices[index].id : null
+        )
         .filter(Boolean);
 
-      // Update the question with the correct choice IDs
       if (correctChoiceIds.length > 0) {
         await prisma.question.update({
           where: { id: newQuestion.id },

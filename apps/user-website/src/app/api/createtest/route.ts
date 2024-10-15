@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from "next/server";
 export const POST = async (req: NextRequest) => {
   try {
     const data = await req.json();
-    console.log("inside", data);
     const testSchema = await UserTestDetailSchema.safeParse(data);
 
     if (!testSchema.success) {
@@ -22,12 +21,21 @@ export const POST = async (req: NextRequest) => {
 
     if (testDetails.testType === "SIMULATION") {
       const singleAnswerQuestions = await prisma.question.findMany({
-        where: { categoryId: testDetails.categoryId, isMultipleAnswer: false },
+        where: {
+          isMultipleAnswer: false,
+          category: {
+            deleted: false,
+          },
+        },
         take: 50,
       });
-
       const multipleAnswerQuestions = await prisma.question.findMany({
-        where: { categoryId: testDetails.categoryId, isMultipleAnswer: true },
+        where: {
+          isMultipleAnswer: true,
+          category: {
+            deleted: false,
+          },
+        },
         take: 150,
       });
 
@@ -118,7 +126,11 @@ export const POST = async (req: NextRequest) => {
       });
     } else {
       selectedQuestions = await prisma.question.findMany({
-        where: { categoryId: testDetails.categoryId },
+        where: {
+          category: {
+            deleted: false,
+          },
+        },
         take: testDetails.numberOfQuestions,
       });
 
