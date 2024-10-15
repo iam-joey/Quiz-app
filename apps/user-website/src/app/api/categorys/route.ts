@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = async (req: NextRequest) => {
   try {
     const data = await prisma.category.findMany({
+      where: {
+        deleted: false,
+      },
       select: {
         id: true,
         name: true,
@@ -20,6 +23,7 @@ export const GET = async (req: NextRequest) => {
       data,
     });
   } catch (error) {
+    console.log(error);
     return NextResponse.json({
       msg: "Seomthing went wrong while fetching the topics",
       err: false,

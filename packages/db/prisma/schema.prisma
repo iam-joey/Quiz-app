@@ -29,9 +29,6 @@ model User {
   SimulationTestDetail SimulationTestDetail[]
 }
 
-
-
-
 model Admin {
     id                String    @id @default(uuid()) @unique
     email             String    @unique
@@ -56,9 +53,30 @@ model Category {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   UserTestDetail UserTestDetail[]
-
+  deleted         Boolean   @default(false)
   @@index([id])
   SimulationTestDetail SimulationTestDetail[]
+}
+
+
+model Question {
+  id                String    @id @default(uuid()) @unique
+  title             String
+  categoryId        String
+  question          String
+  choice            Choices[]
+  answer            String[]
+  isMultipleAnswer  Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  category          Category  @relation(fields: [categoryId], references: [id])
+  UserTestDetail UserTestDetail[]
+  SimulationSingle    SimulationTestDetail[] @relation("SingleQuestionSimulation")
+  SimulationMultiple  SimulationTestDetail[] @relation("MultipleQuestionSimulation")
+
+  @@index([id])
+  @@index([isMultipleAnswer])
+  @@index([categoryId])
 }
 
 model UserTestDetail {
@@ -114,25 +132,6 @@ model SimulationTestDetail{
     @@index([id,userId])
 }
 
-model Question {
-  id                String    @id @default(uuid()) @unique
-  title             String
-  categoryId        String
-  question          String
-  choice            Choices[]
-  answer            String[]
-  isMultipleAnswer  Boolean   @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  category          Category  @relation(fields: [categoryId], references: [id])
-  UserTestDetail UserTestDetail[]
-  SimulationSingle    SimulationTestDetail[] @relation("SingleQuestionSimulation")
-  SimulationMultiple  SimulationTestDetail[] @relation("MultipleQuestionSimulation")
-
-  @@index([id])
-  @@index([isMultipleAnswer])
-  @@index([categoryId])
-}
 
 model Choices {
   id              String    @id @default(uuid()) @unique

@@ -41,19 +41,20 @@ export default function Home() {
   useEffect(() => {
     setTestData(null);
     setSimulationTestData(null);
-  
+
     // // Clear all test-related data from local storage
     // Object.keys(localStorage).forEach(key => {
-    //   if (key.startsWith('testData_') || 
-    //       key.startsWith('simulationTestData_') || 
+    //   if (key.startsWith('testData_') ||
+    //       key.startsWith('simulationTestData_') ||
     //       key.startsWith('testProgress_')) {
     //     localStorage.removeItem(key);
     //   }
     // });
-  
+
     const fetchCategories = async () => {
       try {
         const response = await axios.get("/api/categorys");
+        console.log(response);
         if (response.data.err === false) {
           setCategories(response.data.data);
         } else {
@@ -65,7 +66,7 @@ export default function Home() {
         setIsLoading(false);
       }
     };
-  
+
     fetchCategories();
   }, []);
 
@@ -77,7 +78,11 @@ export default function Home() {
       duration: testDuration ? Math.round(testDuration * 3600) : 0,
       numberOfQuestions: questionCount || 0,
       categoryId: selectedCategory || "",
-      testType: isExamSimulation ? "SIMULATION" : isTimedTest ? "TIMER" : "NOTIMER",
+      testType: isExamSimulation
+        ? "SIMULATION"
+        : isTimedTest
+          ? "TIMER"
+          : "NOTIMER",
     };
 
     if (isExamSimulation) {
@@ -95,19 +100,23 @@ export default function Home() {
       return;
     }
 
-    axios.post("/api/createtest", testConfig)
+    axios
+      .post("/api/createtest", testConfig)
       .then((response) => {
         if (!response.data.err) {
           const testId = response.data.data;
-          const testIdWithIsCompleted = {...testId, isCompleted: false};
-          
+          const testIdWithIsCompleted = { ...testId, isCompleted: false };
+
           if (isExamSimulation) {
             setSimulationTestData(testIdWithIsCompleted);
           } else {
             setTestData(testIdWithIsCompleted);
           }
-          
-          localStorage.setItem(`testData_${testId.id}`, JSON.stringify(testIdWithIsCompleted));
+
+          localStorage.setItem(
+            `testData_${testId.id}`,
+            JSON.stringify(testIdWithIsCompleted)
+          );
           router.push(`/test/${testId.id}?type=${testConfig.testType}`);
         } else {
           console.error("Failed to create test:", response.data.error);
@@ -117,10 +126,10 @@ export default function Home() {
       .catch((error) => {
         console.error("Error creating test:", error);
         toast.error("An error occurred. Please try again.");
-      })
-      // .finally(() => {
-      //   setIsStartingTest(false);
-      // });
+      });
+    // .finally(() => {
+    //   setIsStartingTest(false);
+    // });
   };
 
   const updateTestDuration = () => {
@@ -234,7 +243,7 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            {/* <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
                 <svg
                   className="w-6 h-6 text-purple-500 mr-2"
@@ -263,7 +272,7 @@ export default function Home() {
               >
                 Create
               </button>
-            </div>
+            </div> */}
 
             <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
@@ -288,8 +297,8 @@ export default function Home() {
               </p>
               <button
                 onClick={() => {
-                  // router.push("/history");
-                  toast.info("need little fix");
+                  router.push("/history");
+                  // toast.info("need little fix");
                 }}
                 className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
@@ -714,7 +723,7 @@ export default function Home() {
       {showTimeSettingDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full relative">
-                        <button
+            <button
               onClick={() => {
                 setShowTimeSettingDialog(false);
                 setIsTimedTest(false);

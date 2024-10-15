@@ -23,106 +23,122 @@ interface TestResult {
   userAnswers: string[][];
 }
 
-const QuestionButton = memo(({ 
-  index, 
-  isCurrent, 
-  isSkipped, 
-  isAnswered, 
-  onClick 
-}: { 
-  index: number; 
-  isCurrent: boolean; 
-  isSkipped: boolean; 
-  isAnswered: boolean; 
-  onClick: () => void;
-}) => (
-  <button
-    className={`flex items-center justify-center w-10 h-10 rounded-full ${
-      isCurrent
-        ? 'bg-blue-500 text-white'
-        : isSkipped
-        ? 'bg-red-500 text-white'
-        : isAnswered
-        ? 'bg-green-500 text-white'
-        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-    }`}
-    onClick={onClick}
-  >
-    {index + 1}
-  </button>
-));
+const QuestionButton = memo(
+  ({
+    index,
+    isCurrent,
+    isSkipped,
+    isAnswered,
+    onClick,
+  }: {
+    index: number;
+    isCurrent: boolean;
+    isSkipped: boolean;
+    isAnswered: boolean;
+    onClick: () => void;
+  }) => (
+    <button
+      className={`flex items-center justify-center w-10 h-10 rounded-full ${
+        isCurrent
+          ? "bg-blue-500 text-white"
+          : isSkipped
+            ? "bg-red-500 text-white"
+            : isAnswered
+              ? "bg-green-500 text-white"
+              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+      }`}
+      onClick={onClick}
+    >
+      {index + 1}
+    </button>
+  )
+);
 
-const QuestionList = memo(({ 
-  questions, 
-  currentQuestionIndex, 
-  skippedQuestions, 
-  answeredQuestions, 
-  setCurrentQuestionIndex 
-}: {
-  questions: Question[];
-  currentQuestionIndex: number;
-  skippedQuestions: Set<number>;
-  answeredQuestions: Set<number>;
-  setCurrentQuestionIndex: (index: number) => void;
-}) => {
-  const listRef = useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
+const QuestionList = memo(
+  ({
+    questions,
+    currentQuestionIndex,
+    skippedQuestions,
+    answeredQuestions,
+    setCurrentQuestionIndex,
+  }: {
+    questions: Question[];
+    currentQuestionIndex: number;
+    skippedQuestions: Set<number>;
+    answeredQuestions: Set<number>;
+    setCurrentQuestionIndex: (index: number) => void;
+  }) => {
+    const listRef = useRef<HTMLDivElement>(null);
+    const [autoScroll, setAutoScroll] = useState(true);
 
-  const scrollToQuestion = useCallback((index: number) => {
-    if (listRef.current && autoScroll) {
-      const button = listRef.current.children[index] as HTMLElement;
-      if (button) {
-        button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }
-  }, [autoScroll]);
+    const scrollToQuestion = useCallback(
+      (index: number) => {
+        if (listRef.current && autoScroll) {
+          const button = listRef.current.children[index] as HTMLElement;
+          if (button) {
+            button.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        }
+      },
+      [autoScroll]
+    );
 
-  useEffect(() => {
-    scrollToQuestion(currentQuestionIndex);
-  }, [currentQuestionIndex, scrollToQuestion]);
+    useEffect(() => {
+      scrollToQuestion(currentQuestionIndex);
+    }, [currentQuestionIndex, scrollToQuestion]);
 
-  const handleScroll = useCallback(() => {
-    setAutoScroll(false);
-  }, []);
+    const handleScroll = useCallback(() => {
+      setAutoScroll(false);
+    }, []);
 
-  const handleQuestionClick = useCallback((index: number) => {
-    setCurrentQuestionIndex(index);
-    setAutoScroll(true);
-  }, [setCurrentQuestionIndex]);
+    const handleQuestionClick = useCallback(
+      (index: number) => {
+        setCurrentQuestionIndex(index);
+        setAutoScroll(true);
+      },
+      [setCurrentQuestionIndex]
+    );
 
-  const questionButtons = useMemo(() => (
-    questions.map((_, index) => (
-      <QuestionButton
-        key={index}
-        index={index}
-        isCurrent={currentQuestionIndex === index}
-        isSkipped={skippedQuestions.has(index)}
-        isAnswered={answeredQuestions.has(index)}
-        onClick={() => handleQuestionClick(index)}
-      />
-    ))
-  ), [questions, currentQuestionIndex, skippedQuestions, answeredQuestions, handleQuestionClick]);
+    const questionButtons = useMemo(
+      () =>
+        questions.map((_, index) => (
+          <QuestionButton
+            key={index}
+            index={index}
+            isCurrent={currentQuestionIndex === index}
+            isSkipped={skippedQuestions.has(index)}
+            isAnswered={answeredQuestions.has(index)}
+            onClick={() => handleQuestionClick(index)}
+          />
+        )),
+      [
+        questions,
+        currentQuestionIndex,
+        skippedQuestions,
+        answeredQuestions,
+        handleQuestionClick,
+      ]
+    );
 
-  return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col h-full">
-      <h3 className="text-xl font-semibold mb-4">Questions</h3>
-      <div 
-        ref={listRef} 
-        className="overflow-y-auto flex-grow"
-        style={{ 
-          height: 'calc(100vh - 200px)', 
-          overflowY: 'scroll',
-          WebkitOverflowScrolling: 'touch'
-        }}
-        onScroll={handleScroll}
-      >
-        <div className="grid grid-cols-4 gap-2 pb-4">
-          {questionButtons}
+    return (
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col h-full">
+        <h3 className="text-xl font-semibold mb-4">Questions</h3>
+        <div
+          ref={listRef}
+          className="overflow-y-auto flex-grow"
+          style={{
+            height: "calc(100vh - 200px)",
+            overflowY: "scroll",
+            WebkitOverflowScrolling: "touch",
+          }}
+          onScroll={handleScroll}
+        >
+          <div className="grid grid-cols-4 gap-2 pb-4">{questionButtons}</div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 export default function TestPage() {
   const router = useRouter();
@@ -130,7 +146,8 @@ export default function TestPage() {
   const [testId, setTestId] = useState<string | number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { testData, setTestData } = useTestContext();
-  const { simulationTestData, setSimulationTestData } = useSimulationTestContext();
+  const { simulationTestData, setSimulationTestData } =
+    useSimulationTestContext();
   const { isDarkTheme } = useTheme();
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
@@ -138,7 +155,9 @@ export default function TestPage() {
   const questionCount = parseInt(searchParams.get("questionCount") || "20", 10);
   const [isTimed, setIsTimed] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [skippedQuestions, setSkippedQuestions] = useState<Set<number>>(new Set());
+  const [skippedQuestions, setSkippedQuestions] = useState<Set<number>>(
+    new Set()
+  );
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => {
     if (typeof window !== "undefined") {
       const savedIndex = localStorage.getItem(
@@ -167,9 +186,10 @@ export default function TestPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(
+    new Set()
+  );
   const [showQuestionList, setShowQuestionList] = useState(false);
-  
 
   useEffect(() => {
     selectedAnswersRef.current = selectedAnswers;
@@ -189,7 +209,6 @@ export default function TestPage() {
   }, [currentQuestionIndex, selectedAnswers, saveProgress]);
 
   const handleSubmit = async (forcedSubmit = false) => {
-
     // if(testType === "SIMULATION" && Object.keys(selectedAnswers).length !== 200){
     //   toast.error("Please answer all questions");
     //   return;
@@ -202,10 +221,13 @@ export default function TestPage() {
 
     setShowConfirmDialog(false);
     setIsSubmitting(true);
-    if(testData){
-      testData.isCompleted=true;
-      console.log("testData in handleSubmit",testData);
-      localStorage.setItem(`testData_${params.testId}`, JSON.stringify(testData));
+    if (testData) {
+      testData.isCompleted = true;
+      console.log("testData in handleSubmit", testData);
+      localStorage.setItem(
+        `testData_${params.testId}`,
+        JSON.stringify(testData)
+      );
     }
     try {
       const currentSelectedAnswers = selectedAnswersRef.current;
@@ -215,12 +237,14 @@ export default function TestPage() {
       console.log("userAnswers", answersToSubmit);
       console.log("testId", testId);
       let type;
-      if(simulationTestData){
-          type = simulationTestData.testType;
-          simulationTestData.isCompleted=true;
-          localStorage.setItem(`simulationTestData_${params.testId}`, JSON.stringify(simulationTestData));
-      }
-      else{
+      if (simulationTestData) {
+        type = simulationTestData.testType;
+        simulationTestData.isCompleted = true;
+        localStorage.setItem(
+          `simulationTestData_${params.testId}`,
+          JSON.stringify(simulationTestData)
+        );
+      } else {
         type = testData?.testType;
       }
       console.log("type", type);
@@ -253,7 +277,7 @@ export default function TestPage() {
       setIsSubmitting(false);
     }
   };
-//submit confirmation
+  //submit confirmation
   const confirmSubmit = () => {
     setShowConfirmDialog(false);
     handleSubmit(true);
@@ -267,24 +291,37 @@ export default function TestPage() {
 
   useEffect(() => {
     const fetchQuestions = async () => {
-        if(questions.length > 0){
-          return;
-        }
+      if (questions.length > 0) {
+        console.log("i'm returning");
+        return;
+      }
       // Check if we have data in the context
-      if (testData && testData.question && (testData.testType === "TIMER" || testData.testType === "NOTIMER")) {
+      if (
+        testData &&
+        testData.question &&
+        (testData.testType === "TIMER" || testData.testType === "NOTIMER")
+      ) {
         setTestType(testData.testType);
         setQuestions(testData.question);
         if (testData.testType === "TIMER") {
-          const savedTime = localStorage.getItem(`testProgress_${params.testId}_remainingTime`);
+          const savedTime = localStorage.getItem(
+            `testProgress_${params.testId}_remainingTime`
+          );
           if (savedTime) {
             setRemainingTime(parseInt(savedTime, 10));
           } else {
             const createdAt = new Date(testData.createdAt).getTime();
             const currentTime = Date.now();
             const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
-            const remainingSeconds = Math.max(testData.duration - elapsedSeconds, 0);
+            const remainingSeconds = Math.max(
+              testData.duration - elapsedSeconds,
+              0
+            );
             setRemainingTime(remainingSeconds);
-            localStorage.setItem(`testProgress_${params.testId}_remainingTime`, remainingSeconds.toString());
+            localStorage.setItem(
+              `testProgress_${params.testId}_remainingTime`,
+              remainingSeconds.toString()
+            );
           }
           setIsTimed(true);
         } else {
@@ -293,36 +330,56 @@ export default function TestPage() {
         setIsLoading(false);
         setTestId(testData.id);
         // Save context data to localStorage
-        localStorage.setItem(`testData_${params.testId}`, JSON.stringify(testData));
+        localStorage.setItem(
+          `testData_${params.testId}`,
+          JSON.stringify(testData)
+        );
         return;
-      } else if (simulationTestData && (simulationTestData.singleQuestion || simulationTestData.multipleQuestion)) {
+      } else if (
+        simulationTestData &&
+        (simulationTestData.singleQuestion ||
+          simulationTestData.multipleQuestion)
+      ) {
         setTestType(simulationTestData.testType);
         // Handle simulation test data
-        const allQuestions = [...simulationTestData.singleQuestion, ...simulationTestData.multipleQuestion];
-        setQuestions(allQuestions.map(q => ({
-          id: q.title, // Using title as id for simulation questions
-          question: q.title,
-          choice: q.choice
-        })));
+        const allQuestions = [
+          ...simulationTestData.singleQuestion,
+          ...simulationTestData.multipleQuestion,
+        ];
+        setQuestions(
+          allQuestions.map((q) => ({
+            id: q.title, // Using title as id for simulation questions
+            question: q.title,
+            choice: q.choice,
+          }))
+        );
         //set isTimed
         setIsTimed(true);
         setDuration(simulationTestData.duration);
         const createdAt = new Date(simulationTestData.createdAt).getTime();
         const currentTime = Date.now();
         const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
-        const remainingSeconds = Math.max(simulationTestData.duration - elapsedSeconds, 0);
+        const remainingSeconds = Math.max(
+          simulationTestData.duration - elapsedSeconds,
+          0
+        );
         setRemainingTime(remainingSeconds);
         setIsLoading(false);
         setTestId(simulationTestData.id);
         // Save context data to localStorage
-        localStorage.setItem(`simulationTestData_${params.testId}`, JSON.stringify(simulationTestData));
+        localStorage.setItem(
+          `simulationTestData_${params.testId}`,
+          JSON.stringify(simulationTestData)
+        );
         return;
       }
 
       // If not in context, check localStorage
       const cachedData = localStorage.getItem(`testData_${params.testId}`);
-      const cachedSimulationData = localStorage.getItem(`simulationTestData_${params.testId}`);
-      
+      const cachedSimulationData = localStorage.getItem(
+        `simulationTestData_${params.testId}`
+      );
+
       if (cachedSimulationData) {
         const parsedData = JSON.parse(cachedSimulationData);
         console.log("Using simulationTestData from localStorage");
@@ -336,11 +393,14 @@ export default function TestPage() {
         setTestData(parsedData);
         setQuestions(parsedData.question);
         setIsTimed(parsedData.testType === "TIMER");
-        if(isTimed){
+        if (isTimed) {
           const createdAt = new Date(parsedData.createdAt).getTime();
           const currentTime = Date.now();
           const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
-          const remainingSeconds = Math.max(parsedData.duration - elapsedSeconds, 0);
+          const remainingSeconds = Math.max(
+            parsedData.duration - elapsedSeconds,
+            0
+          );
           setRemainingTime(remainingSeconds);
         }
         setDuration(parsedData.duration);
@@ -364,33 +424,42 @@ export default function TestPage() {
           throw new Error(data.msg);
         }
 
-        if(data.data.isCompleted){
+        if (data.data.isCompleted) {
           setIsLoading(false);
           router.push(`/test/${testId}/results?testType=${testType}`);
           return;
         }
-        
+
         if (testType === "SIMULATION") {
           setSimulationTestData(data);
-          localStorage.setItem(`simulationTestData_${testId}`, JSON.stringify(data));
+          localStorage.setItem(
+            `simulationTestData_${testId}`,
+            JSON.stringify(data)
+          );
           // ... handle simulation test data
         } else {
           setTestData(data);
           localStorage.setItem(`testData_${testId}`, JSON.stringify(data));
           // ... handle regular test data
         }
-        
+
         // ... set common states like isLoading, testId, etc.
       } catch (error) {
         console.error("Failed to fetch questions:", error);
         setIsLoading(false);
       }
     };
-    if(questions.length === 0){  
+    if (questions.length === 0) {
       fetchQuestions();
     }
-  }, [testData, setTestData, simulationTestData, setSimulationTestData, params.testId]);
-  
+  }, [
+    testData,
+    setTestData,
+    simulationTestData,
+    setSimulationTestData,
+    params.testId,
+  ]);
+
   useEffect(() => {
     if (isTimed && remainingTime !== null) {
       const timer = setInterval(() => {
@@ -401,7 +470,10 @@ export default function TestPage() {
             return 0;
           }
           const newTime = prevTime === null ? null : prevTime - 1;
-          localStorage.setItem(`testProgress_${params.testId}_remainingTime`, newTime?.toString() || '');
+          localStorage.setItem(
+            `testProgress_${params.testId}_remainingTime`,
+            newTime?.toString() || ""
+          );
           return newTime;
         });
       }, 1000);
@@ -410,41 +482,44 @@ export default function TestPage() {
     }
   }, [isTimed, remainingTime, params.testId]);
 
-  const handleAnswerSelect = useCallback((questionId: string, answerId: string) => {
-    setSelectedAnswers((prev) => {
-      let updatedAnswers;
-      
-      if (testType === "SIMULATION" && currentQuestionIndex < 50) {
-        updatedAnswers = [answerId];
-      } else {
-        const currentAnswers = prev[questionId] || [];
-        updatedAnswers = currentAnswers.includes(answerId)
-          ? currentAnswers.filter((id) => id !== answerId)
-          : [...currentAnswers, answerId];
-      }
-      
-      const newState = { ...prev, [questionId]: updatedAnswers };
-      selectedAnswersRef.current = newState;
-      
-      setAnsweredQuestions(prevAnswered => {
-        const newSet = new Set(prevAnswered);
-        if (updatedAnswers.length > 0) {
-          newSet.add(currentQuestionIndex);
+  const handleAnswerSelect = useCallback(
+    (questionId: string, answerId: string) => {
+      setSelectedAnswers((prev) => {
+        let updatedAnswers;
+
+        if (testType === "SIMULATION" && currentQuestionIndex < 50) {
+          updatedAnswers = [answerId];
         } else {
-          newSet.delete(currentQuestionIndex);
+          const currentAnswers = prev[questionId] || [];
+          updatedAnswers = currentAnswers.includes(answerId)
+            ? currentAnswers.filter((id) => id !== answerId)
+            : [...currentAnswers, answerId];
         }
-        return newSet;
+
+        const newState = { ...prev, [questionId]: updatedAnswers };
+        selectedAnswersRef.current = newState;
+
+        setAnsweredQuestions((prevAnswered) => {
+          const newSet = new Set(prevAnswered);
+          if (updatedAnswers.length > 0) {
+            newSet.add(currentQuestionIndex);
+          } else {
+            newSet.delete(currentQuestionIndex);
+          }
+          return newSet;
+        });
+
+        setSkippedQuestions((prevSkipped) => {
+          const newSet = new Set(prevSkipped);
+          newSet.delete(currentQuestionIndex);
+          return newSet;
+        });
+
+        return newState;
       });
-      
-      setSkippedQuestions(prevSkipped => {
-        const newSet = new Set(prevSkipped);
-        newSet.delete(currentQuestionIndex);
-        return newSet;
-      });
-      
-      return newState;
-    });
-  }, [testType, currentQuestionIndex]);
+    },
+    [testType, currentQuestionIndex]
+  );
 
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -462,7 +537,7 @@ export default function TestPage() {
 
   const handleSkipQuestion = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
-      setSkippedQuestions(prev => new Set(prev).add(currentQuestionIndex));
+      setSkippedQuestions((prev) => new Set(prev).add(currentQuestionIndex));
       setCurrentQuestionIndex((prev) => prev + 1);
     }
   }, [currentQuestionIndex, questions.length]);
@@ -471,11 +546,11 @@ export default function TestPage() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
-    
+
     if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     } else {
-      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
     }
   };
 
@@ -523,7 +598,7 @@ export default function TestPage() {
       `simulationTestData_${params.testId}`,
     ];
 
-    keys.forEach(key => localStorage.removeItem(key));
+    keys.forEach((key) => localStorage.removeItem(key));
     setSimulationTestData(null);
     setTestData(null);
   };
@@ -548,8 +623,10 @@ export default function TestPage() {
             {showQuestionList ? "Hide" : "Show"} Questions List
           </button>
         </div>
-        <div className={`${showQuestionList ? 'block' : 'hidden'} lg:block h-[calc(100vh-5rem)] lg:h-auto overflow-y-auto`}>
-          <QuestionList 
+        <div
+          className={`${showQuestionList ? "block" : "hidden"} lg:block h-[calc(100vh-5rem)] lg:h-auto overflow-y-auto`}
+        >
+          <QuestionList
             questions={questions}
             currentQuestionIndex={currentQuestionIndex}
             skippedQuestions={skippedQuestions}
@@ -608,7 +685,9 @@ export default function TestPage() {
                       ? "bg-blue-600 text-white"
                       : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
-                  onClick={() => handleAnswerSelect(currentQuestion.id, option.id)}
+                  onClick={() =>
+                    handleAnswerSelect(currentQuestion.id, option.id)
+                  }
                 >
                   <span className="font-bold mr-2">
                     {String.fromCharCode(65 + index)}.
@@ -616,9 +695,14 @@ export default function TestPage() {
                   {option.text}
                   <span className="float-right">
                     {testType === "SIMULATION" && currentQuestionIndex < 50
-                      ? (selectedAnswers[currentQuestion?.id]?.[0] === option.id ? "●" : "○")
-                      : (selectedAnswers[currentQuestion?.id]?.includes(option.id) ? "✓" : "◯")
-                    }
+                      ? selectedAnswers[currentQuestion?.id]?.[0] === option.id
+                        ? "●"
+                        : "○"
+                      : selectedAnswers[currentQuestion?.id]?.includes(
+                            option.id
+                          )
+                        ? "✓"
+                        : "◯"}
                   </span>
                 </button>
               ))}
@@ -710,7 +794,7 @@ export default function TestPage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Test'}
+                {isSubmitting ? "Submitting..." : "Submit Test"}
               </button>
             </div>
           </div>

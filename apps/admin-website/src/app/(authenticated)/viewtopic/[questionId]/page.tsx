@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,9 +36,7 @@ type QuestionData = {
 export default function QuestionEditor({
   params,
 }: {
-  params: {
-    questionId: string;
-  };
+  params: { questionId: string };
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [questionData, setQuestionData] = useState<QuestionData>({
@@ -50,20 +49,26 @@ export default function QuestionEditor({
   });
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+
   const fetchQuestion = async () => {
     setIsLoading(true);
+    const id = toast.loading("fetching question");
     try {
       const response = await fetch(`/api/question/${params.questionId}`);
-      if (!response.ok) throw new Error("Failed to fetch question.");
+      if (!response.ok) toast.warning("Failed to fetch question.");
       const data = await response.json();
       if (data.err) {
+        toast.dismiss(id);
         toast.info(`${data.msg}`);
         setIsLoading(false);
         return;
       }
+      toast.dismiss(id);
+      toast.info(`${data.msg}`);
       setQuestionData(data.data);
       setIsLoading(false);
     } catch (error) {
+      toast.dismiss(id);
       toast.error("Error fetching question.");
       setIsLoading(false);
     }
@@ -201,30 +206,34 @@ export default function QuestionEditor({
             ))}
           </ul>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <div className="space-x-2">
-            {isEditing ? (
-              <>
-                <Button onClick={handleUpdate} className="flex items-center">
-                  <Save className="mr-2 h-4 w-4" />
-                  Update
-                </Button>
-                <Button
-                  onClick={handleDelete}
-                  variant="destructive"
-                  className="flex items-center"
-                >
-                  <Trash className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
-              </>
-            ) : (
-              <Button onClick={handleEdit} className="flex items-center">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
+        <CardFooter>
+          {isEditing ? (
+            <div className="flex w-full space-x-2">
+              <Button
+                onClick={handleUpdate}
+                className="flex-1 items-center justify-center"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Update
               </Button>
-            )}
-          </div>
+              <Button
+                onClick={handleDelete}
+                variant="destructive"
+                className="flex-1 items-center justify-center"
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={handleEdit}
+              className="w-full items-center justify-center"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

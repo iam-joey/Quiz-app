@@ -121,7 +121,11 @@ export default function AdminDashboard({
         </CardHeader>
         <CardContent>
           {questions.map((q) => (
-            <Card key={q.id} className="mb-4 cursor-pointer">
+            <Card
+              key={q.id}
+              className="mb-4 cursor-pointer hover:bg-zinc-100"
+              onClick={() => toggleExpand(q.id)}
+            >
               <CardHeader className="py-2">
                 <div className="flex items-center justify-between">
                   <CardTitle

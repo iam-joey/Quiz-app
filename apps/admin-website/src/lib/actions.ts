@@ -69,6 +69,9 @@ export async function getTopics() {
     include: {
       question: true,
     },
+    where: {
+      deleted: false,
+    },
   });
   return {
     err: false,
@@ -277,35 +280,36 @@ export async function updateQuestion(questionData: UpdateQuestionInput) {
   }
 }
 
-// export async function deleteQuestion(id: string) {
-//   try {
-//     const findId = await prisma.question.findUnique({
-//       where: {
-//         id,
-//       },
-//     });
+export async function deleteCategory(id: string) {
+  try {
+    // Check if the category exists
+    const findId = await prisma.category.findUnique({
+      where: { id },
+    });
 
-//     if (!findId) {
-//       return {
-//         msg: "Question not found",
-//         err: true,
-//       };
-//     }
+    if (!findId) {
+      return {
+        msg: "Category not present in db",
+        err: true,
+      };
+    }
 
-//     await prisma.question.delete({
-//       where: {
-//         id,
-//       },
-//     });
+    await prisma.category.update({
+      where: { id },
+      data: {
+        deleted: true,
+        name: "deleted_" + findId.name,
+      },
+    });
 
-//     return {
-//       msg: "Successfully deletd",
-//       err: false,
-//     };
-//   } catch (error) {
-//     return {
-//       msg: "Something went wrong",
-//       err: true,
-//     };
-//   }
-// }
+    revalidatePath("/topics");
+
+    return {
+      msg: "Category successfully deleted",
+      err: false,
+    };
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    return { err: true, msg: "Failed to delete the category" };
+  }
+}

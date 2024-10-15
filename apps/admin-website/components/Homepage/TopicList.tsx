@@ -6,12 +6,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import AddTopicForm from "./AddTopicForm";
-import { getTopics } from "@/src/lib/actions";
+import { deleteCategory, getTopics } from "@/src/lib/actions";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { revalidatePath } from "next/cache";
+
 export const dynamic = "force-dynamic";
+
+async function deleteTopic(formData: FormData) {
+  "use server";
+  const topicId = formData.get("topicId") as string;
+  const result = await deleteCategory(topicId);
+  if (result.err) {
+    console.error(result.msg);
+  } else {
+    revalidatePath("/topics");
+  }
+}
+
 export default async function TopicList() {
   const topics = await getTopics();
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -30,10 +45,16 @@ export default async function TopicList() {
                 Questions: {topic.question.length}
               </p>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex justify-between">
               <Link href={`/topics/${topic.id}`} passHref>
                 <Button variant="outline">View Questions</Button>
               </Link>
+              <form action={deleteTopic}>
+                <input type="hidden" name="topicId" value={topic.id} />
+                <Button type="submit" variant="destructive">
+                  Delete
+                </Button>
+              </form>
             </CardFooter>
           </Card>
         ))}
