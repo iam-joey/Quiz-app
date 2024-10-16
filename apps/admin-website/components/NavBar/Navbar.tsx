@@ -2,6 +2,7 @@
 import React from "react";
 import { UserSetting } from "./UserSetting";
 import { useRouter } from "next/navigation";
+import Search from "../Search/Search";
 
 function Navbar() {
   const router = useRouter();
@@ -15,6 +16,7 @@ function Navbar() {
       >
         LOGO
       </div>
+      <Search />
       <UserSetting />
     </div>
   );
