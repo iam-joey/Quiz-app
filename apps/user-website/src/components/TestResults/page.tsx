@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
+import { FlagIcon } from '@heroicons/react/24/outline';
+import { useSession } from "next-auth/react";
+import { authOptions } from "@/src/lib/auth";
 
 interface Question {
   id: string;
@@ -58,6 +61,12 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [simulationTestResult, setSimulationTestResult] = useState<SimulationTestResult | null>(null);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState("");
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  //@ts-ignore
+  const session = useSession(authOptions);
+
   useEffect(() => {
     const fetchTestData = async () => {
       console.log("Results page");
@@ -122,6 +131,47 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
     }
   }, [testResult]);
 
+  const handleFlagClick = (questionId: string) => {
+    console.log("session", session);
+    setSelectedQuestionId(questionId);
+    setFeedback("");
+    dialogRef.current?.showModal();
+  };
+
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+
+    try {
+      const response = await fetch('/api/flag', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          questionId: selectedQuestionId,
+          flagReason: feedback,
+          userId: (session.data?.user as any)?.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit flag');
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.msg);
+      }
+
+      toast.success("Question flagged successfully!");
+      dialogRef.current?.close();
+    } catch (error) {
+      console.error("Error flagging question:", error);
+      toast.error("Failed to flag question");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -138,6 +188,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   }
 
   return (
+    <>
     <div className="flex justify-center">
       <div className="max-w-3xl w-full px-4">
         <div className="mt-8">
@@ -151,23 +202,24 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                 {testResult.question.map((question, index) => (
                   <div
                     key={question.id}
-                    className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                    className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
                   >
                     <h3 className="text-xl font-semibold mb-2">
                       Question {index + 1}
                     </h3>
                     <p className="mb-2">{question.question}</p>
+                    <FlagIcon
+                      className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                      onClick={() => handleFlagClick(question.id)} />
                     <div className="space-y-2">
                       {question.choice.map((choice) => (
                         <div
                           key={choice.id}
-                          className={`p-2 rounded ${
-                            question.answer.includes(choice.id)
+                          className={`p-2 rounded ${question.answer.includes(choice.id)
                               ? "bg-green-200 dark:bg-green-700"
                               : testResult.userAnswers[index]?.includes(choice.id)
                                 ? "bg-red-200 dark:bg-red-700"
-                                : "bg-white dark:bg-gray-700"
-                          }`}
+                                : "bg-white dark:bg-gray-700"}`}
                         >
                           {choice.text}
                           {question.answer.includes(choice.id) && " ✓"}
@@ -193,23 +245,24 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                 {simulationTestResult.singleQuestion.map((question, index) => (
                   <div
                     key={`single-${index}`}
-                    className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                    className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
                   >
                     <h3 className="text-xl font-semibold mb-2">
                       Question {index + 1} (Single)
                     </h3>
                     <p className="mb-2">{question.title}</p>
+                    <FlagIcon
+                      className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                      onClick={() => handleFlagClick(`single-${index}`)} />
                     <div className="space-y-2">
                       {question.choice.map((choice) => (
                         <div
                           key={choice.id}
-                          className={`p-2 rounded ${
-                            question.answer.includes(choice.id)
+                          className={`p-2 rounded ${question.answer.includes(choice.id)
                               ? "bg-green-200 dark:bg-green-700"
                               : simulationTestResult.userAnswers[index]?.includes(choice.id)
                                 ? "bg-red-200 dark:bg-red-700"
-                                : "bg-white dark:bg-gray-700"
-                          }`}
+                                : "bg-white dark:bg-gray-700"}`}
                         >
                           {choice.text}
                           {question.answer.includes(choice.id) && " ✓"}
@@ -224,23 +277,24 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                 {simulationTestResult.multipleQuestion.map((question, index) => (
                   <div
                     key={`multiple-${index}`}
-                    className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                    className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
                   >
                     <h3 className="text-xl font-semibold mb-2">
                       Question {simulationTestResult.singleQuestion.length + index + 1} (Multiple)
                     </h3>
                     <p className="mb-2">{question.title}</p>
+                    <FlagIcon
+                      className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                      onClick={() => handleFlagClick(`multiple-${index}`)} />
                     <div className="space-y-2">
                       {question.choice.map((choice) => (
                         <div
                           key={choice.id}
-                          className={`p-2 rounded ${
-                            question.answer.includes(choice.id)
+                          className={`p-2 rounded ${question.answer.includes(choice.id)
                               ? "bg-green-200 dark:bg-green-700"
                               : simulationTestResult.userAnswers[simulationTestResult.singleQuestion.length + index]?.includes(choice.id)
                                 ? "bg-red-200 dark:bg-red-700"
-                                : "bg-white dark:bg-gray-700"
-                          }`}
+                                : "bg-white dark:bg-gray-700"}`}
                         >
                           {choice.text}
                           {question.answer.includes(choice.id) && " ✓"}
@@ -258,6 +312,37 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
         </div>
       </div>
     </div>
+    <dialog 
+      ref={dialogRef} 
+      className="p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 max-w-md w-full"
+    >
+      <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Submit Feedback</h3>
+      <form onSubmit={handleSubmitFeedback}>
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          className="w-full h-32 p-2 border rounded-md mb-4 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          placeholder="Enter your feedback here..."
+          required
+        />
+        <div className="flex justify-end space-x-2">
+          <button
+            type="button"
+            onClick={() => dialogRef.current?.close()}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+          >
+            Submit
+          </button>
+        </div>
+      </form>
+    </dialog>
+  </>
   );
 };
 
