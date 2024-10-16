@@ -12,7 +12,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Edit, Save, Trash } from "lucide-react";
+import { Edit, Save, Trash, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -49,6 +49,8 @@ export default function QuestionEditor({
   });
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchQuestion = async () => {
     setIsLoading(true);
@@ -82,7 +84,8 @@ export default function QuestionEditor({
 
   const handleUpdate = async () => {
     if (!questionData) return;
-    const loadingId = toast.loading("Loading");
+    setIsUpdating(true);
+    const loadingId = toast.loading("Updating question");
     try {
       const response = await fetch(`/api/updatequestion/${params.questionId}`, {
         method: "POST",
@@ -95,18 +98,23 @@ export default function QuestionEditor({
       if (!response.ok) {
         toast.dismiss(loadingId);
         toast.warning("Failed to update question.");
+      } else {
+        toast.dismiss(loadingId);
+        toast.success("Question updated successfully.");
+        setIsEditing(false);
       }
-      toast.dismiss(loadingId);
-      toast.success("Question updated successfully.");
-      setIsEditing(false);
     } catch (error) {
       toast.dismiss(loadingId);
       toast.error("Error updating question.");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleDelete = async () => {
     if (!questionData) return;
+    setIsDeleting(true);
+    const loadingId = toast.loading("Deleting question");
     try {
       const response = await fetch(`/api/deletequestion/${params.questionId}`, {
         method: "POST",
@@ -116,10 +124,13 @@ export default function QuestionEditor({
         throw new Error("Failed to delete question.");
       }
 
+      toast.dismiss(loadingId);
       toast.success("Question deleted successfully.");
       router.push("/");
     } catch (error) {
+      toast.dismiss(loadingId);
       toast.error("Error deleting question.");
+      setIsDeleting(false);
     }
   };
 
@@ -212,17 +223,27 @@ export default function QuestionEditor({
               <Button
                 onClick={handleUpdate}
                 className="flex-1 items-center justify-center"
+                disabled={isUpdating || isDeleting}
               >
-                <Save className="mr-2 h-4 w-4" />
-                Update
+                {isUpdating ? (
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isUpdating ? "Updating..." : "Update"}
               </Button>
               <Button
                 onClick={handleDelete}
                 variant="destructive"
                 className="flex-1 items-center justify-center"
+                disabled={isUpdating || isDeleting}
               >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
+                {isDeleting ? (
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash className="mr-2 h-4 w-4" />
+                )}
+                {isDeleting ? "Deleting..." : "Delete"}
               </Button>
             </div>
           ) : (
