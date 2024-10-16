@@ -203,6 +203,7 @@ export default function TestPage() {
     return new Set();
   });
   const [showQuestionList, setShowQuestionList] = useState(false);
+  const [highlightedOption, setHighlightedOption] = useState<number>(-1);
 
   useEffect(() => {
     selectedAnswersRef.current = selectedAnswers;
@@ -605,53 +606,44 @@ export default function TestPage() {
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
     const currentQuestion = questions[currentQuestionIndex];
     if (!currentQuestion) return;
-  
-    switch (event.key) {
-      case ' ':
-        handleSkipQuestion();
-        break;
-      case 'Enter':
-        if (isAnswerSelected(currentQuestion.id)) {
-          handleNextQuestion();
-        } else {
+
+    const handleCurrentQuestion = (question: Question) => {
+      switch (event.key) {
+        case ' ':
           handleSkipQuestion();
-        }
-        break;
-      case 'ArrowLeft':
-        handlePreviousQuestion();
-        break;
-      case 'ArrowRight':
-        if (isAnswerSelected(currentQuestion.id)) {
+          break;
+        case 'Enter':
+          if (question.choice && question.choice.length > 0) {
+            if (highlightedOption !== -1 && question.choice[highlightedOption]) {
+              handleAnswerSelect(question.id, question.choice[highlightedOption].id);
+            }
+          }
+          break;
+        case 'ArrowLeft':
+          handlePreviousQuestion();
+          break;
+        case 'ArrowRight':
           handleNextQuestion();
-        }
-        break;
-      case 'ArrowUp':
-      case 'ArrowDown':
-        const currentChoices = currentQuestion.choice;
-        
-        if (currentChoices && currentChoices.length > 0) {
-          const currentAnswers = selectedAnswers[currentQuestion.id] || [];
-          let currentIndex = -1;
+          break;
+        case 'ArrowUp':
+        case 'ArrowDown':
+          if (question.choice && question.choice.length > 0) {
+            let newIndex: number;
+            if (highlightedOption === -1) {
+              newIndex = event.key === 'ArrowUp' ? question.choice.length - 1 : 0;
+            } else {
+              newIndex = event.key === 'ArrowUp'
+                ? (highlightedOption - 1 + question.choice.length) % question.choice.length
+                : (highlightedOption + 1) % question.choice.length;
+            }
+            setHighlightedOption(newIndex);
+          }
+          break;
+      }
+    };
 
-          if (currentAnswers.length > 0) {
-            currentIndex = currentChoices.findIndex(choice => choice.id === currentAnswers[0]);
-          }
-
-          let newIndex: number;
-          if (event.key === 'ArrowUp') {
-            newIndex = (currentIndex - 1 + currentChoices.length) % currentChoices.length;
-          } else {
-            newIndex = (currentIndex + 1) % currentChoices.length;
-          }
-          
-          const newChoice = currentChoices[newIndex];
-          if (newChoice && newChoice.id) {
-            handleAnswerSelect(currentQuestion.id, newChoice.id);
-          }
-        }
-        break;
-    }
-  }, [questions, currentQuestionIndex, selectedAnswers, handleSkipQuestion, handleNextQuestion, handlePreviousQuestion, handleAnswerSelect, isAnswerSelected]);
+    handleCurrentQuestion(currentQuestion);
+  }, [questions, currentQuestionIndex, handleSkipQuestion, handleNextQuestion, handlePreviousQuestion, handleAnswerSelect, highlightedOption]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
@@ -795,6 +787,8 @@ export default function TestPage() {
                   className={`w-full p-3 text-left border rounded-lg transition-colors duration-200 ${
                     selectedAnswers[currentQuestion?.id]?.includes(option.id)
                       ? "bg-blue-600 text-white"
+                      : highlightedOption === index
+                      ? "bg-gray-200 dark:bg-gray-600"
                       : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
                   onClick={() =>
