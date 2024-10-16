@@ -87,6 +87,7 @@ export const GET = async (
           isCompleted: true,
           singleQuestion: {
             select: {
+              id: true, // Add this line to include questionId
               title: true,
               choice: {
                 select: {
@@ -99,6 +100,7 @@ export const GET = async (
           },
           multipleQuestion: {
             select: {
+              id: true, // Add this line to include questionId
               title: true,
               choice: {
                 select: {
@@ -132,10 +134,16 @@ export const GET = async (
         : {
             ...testDetail,
             singleQuestion: testDetail.singleQuestion.map(
-              ({ answer, ...rest }) => rest
+              ({ id, answer, ...rest }) => ({
+                questionId: id, // Rename id to questionId
+                ...rest,
+              })
             ),
             multipleQuestion: testDetail.multipleQuestion.map(
-              ({ answer, ...rest }) => rest
+              ({ id, answer, ...rest }) => ({
+                questionId: id, // Rename id to questionId
+                ...rest,
+              })
             ),
             userAnswers: [],
             score: undefined,

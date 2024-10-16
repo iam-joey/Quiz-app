@@ -69,7 +69,7 @@ export default function TopicList({
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Topic List</h1>
-        <AddTopicForm />
+        <AddTopicForm setTopics={setTopics} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

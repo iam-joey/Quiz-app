@@ -13,9 +13,11 @@ import {
 import { Button } from "../ui/button";
 import { signOut, useSession } from "next-auth/react";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 export function UserSetting() {
   const session = useSession();
+  const router = useRouter();
   return (
     <>
       <DropdownMenu>
@@ -46,6 +48,14 @@ export function UserSetting() {
               onClick={() => signOut({ callbackUrl: "/login" })}
             >
               Logout
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                router.push("/flags");
+              }}
+            >
+              Flags
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>

@@ -11,18 +11,52 @@ import {
 } from "@/components/ui/dialog";
 import { PlusCircle } from "lucide-react";
 import { createTopic } from "@/src/lib/actions";
-import { useState } from "react";
+import { useState, Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
-export default function AddTopicForm() {
+
+type Topic = {
+  id: string;
+  name: string;
+  question: any[];
+  deleted?: boolean;
+};
+
+type CreateTopicResponse = {
+  err: boolean;
+  msg: string;
+  data: {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    deleted: boolean;
+  } | null;
+};
+
+type AddTopicFormProps = {
+  setTopics: Dispatch<SetStateAction<Topic[]>>;
+};
+
+export default function AddTopicForm({ setTopics }: AddTopicFormProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const result = await createTopic(formData);
-    console.log("result is", result);
-    if (!result.err) {
+    const result = (await createTopic(formData)) as CreateTopicResponse;
+
+    if (!result.err && result.data) {
+      const newTopic: Topic = {
+        id: result.data.id,
+        name: result.data.name,
+        question: [],
+        deleted: result.data.deleted,
+      };
+      setTopics((prevTopics) => [...prevTopics, newTopic]);
       toast.success(result.msg || "Topic created successfully!");
       setIsDialogOpen(false);
+      // Reset the form
+      (e.target as HTMLFormElement).reset();
     } else {
       toast.warning(result.msg);
     }
