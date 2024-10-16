@@ -27,6 +27,7 @@ model User {
 
   @@index([id])
   SimulationTestDetail SimulationTestDetail[]
+  Flag Flag[]
 }
 
 model Admin {
@@ -77,6 +78,7 @@ model Question {
   @@index([id])
   @@index([isMultipleAnswer])
   @@index([categoryId])
+  Flag Flag[]
 }
 
 model UserTestDetail {
@@ -119,10 +121,10 @@ model SimulationTestDetail{
     testType           TestType @default(SIMULATION)
     categoryId         String
    score              Float?    // Percentage score
-  correctAnswers     Int?      // Number of correct answers
-  incorrectAnswers   Int?      // Number of incorrect answers
-  totalTimeTaken     Int?      // Total time taken (in seconds)
-  accuracy           Float?    // Accuracy rate
+    correctAnswers     Int?      // Number of correct answers
+    incorrectAnswers   Int?      // Number of incorrect answers
+    totalTimeTaken     Int?      // Total time taken (in seconds)
+    accuracy           Float?    // Accuracy rate
 
     createdAt         DateTime  @default(now())
     updatedAt         DateTime  @updatedAt
@@ -138,6 +140,21 @@ model Choices {
   questionId      String
   text            String    
   question        Question   @relation(fields: [questionId], references: [id],onDelete: Cascade)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([id])
+}
+
+model Flag{
+  id              String    @id @default(uuid()) @unique
+  questionId      String
+  userId          String
+  description     String
+  resolved        Boolean   @default(false)
+  comment         String?
+  question        Question   @relation(fields: [questionId], references: [id],onDelete: Cascade)
+  user            User       @relation(fields: [userId], references: [id],onDelete: Cascade)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 

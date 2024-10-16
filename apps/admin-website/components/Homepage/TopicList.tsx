@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -5,27 +8,62 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import AddTopicForm from "./AddTopicForm";
-import { deleteCategory, getTopics } from "@/src/lib/actions";
+import { deleteCategory } from "@/src/lib/actions";
 import Link from "next/link";
-import { Button } from "../ui/button";
-import { revalidatePath } from "next/cache";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-export const dynamic = "force-dynamic";
+type Topic = {
+  id: string;
+  name: string;
+  question: any[];
+  deleted?: boolean;
+};
 
-async function deleteTopic(formData: FormData) {
-  "use server";
-  const topicId = formData.get("topicId") as string;
-  const result = await deleteCategory(topicId);
-  if (result.err) {
-    console.error(result.msg);
-  } else {
-    revalidatePath("/topics");
-  }
-}
+export default function TopicList({
+  initialTopics,
+}: {
+  initialTopics: Topic[];
+}) {
+  const [topics, setTopics] = useState(initialTopics);
+  const [topicToDelete, setTopicToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
-export default async function TopicList() {
-  const topics = await getTopics();
+  const handleDeleteConfirm = async () => {
+    if (topicToDelete) {
+      setIsDeleting(true);
+      const result = await deleteCategory(topicToDelete);
+      setIsDeleting(false);
+      if (result.err) {
+        toast.warning(`Failed to delete topic: ${result.msg}`);
+      } else {
+        setTopics(
+          topics.map((topic) =>
+            topic.id === topicToDelete
+              ? { ...topic, deleted: true, name: `deleted_${topic.name}` }
+              : topic
+          )
+        );
+        toast.success("Topic deleted successfully");
+        router.refresh();
+      }
+      setTopicToDelete(null);
+    }
+  };
+
+  const activeTopics = topics.filter((topic) => !topic.deleted);
 
   return (
     <div className="container mx-auto p-4">
@@ -35,7 +73,7 @@ export default async function TopicList() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {topics.data.map((topic: any) => (
+        {activeTopics.map((topic: Topic) => (
           <Card key={topic.id}>
             <CardHeader>
               <CardTitle>{topic.name}</CardTitle>
@@ -49,12 +87,42 @@ export default async function TopicList() {
               <Link href={`/topics/${topic.id}`} passHref>
                 <Button variant="outline">View Questions</Button>
               </Link>
-              <form action={deleteTopic}>
-                <input type="hidden" name="topicId" value={topic.id} />
-                <Button type="submit" variant="destructive">
-                  Delete
-                </Button>
-              </form>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setTopicToDelete(topic.id)}
+                  >
+                    Delete
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      Are you sure you want to delete this topic?
+                    </DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone. The topic will be marked as
+                      deleted and renamed.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setTopicToDelete(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteConfirm}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardFooter>
           </Card>
         ))}
