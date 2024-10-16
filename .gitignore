@@ -3,7 +3,7 @@ node_modules
 .pnp
 .pnp.js
 
-# Environment Files
+# Environment Variables
 .env
 .env.local
 .env.development.local
@@ -13,7 +13,7 @@ node_modules
 # Testing
 coverage
 
-# Turbo Repo
+# Turbo
 .turbo
 
 # Vercel
@@ -30,6 +30,27 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Miscellaneous
+<<<<<<< HEAD
+        # Vercel
+        .vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+        # Misc
+        .DS_Store
+        *.pem
+node_modules
+=======
+# Misc
 .DS_Store
 *.pem
+>>>>>>> 51a52aea5f30d709d0a1c8e36c7993975a4ec436

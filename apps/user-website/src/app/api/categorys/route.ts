@@ -10,23 +10,30 @@ export const GET = async (req: NextRequest) => {
       select: {
         id: true,
         name: true,
-        question: {
+        _count: {
           select: {
-            id: true,
+            question: true,
           },
         },
       },
     });
+
+    const formattedCategories = data.map(category => ({
+      id: category.id,
+      name: category.name,
+      questionCount: category._count.question,
+    }));
+
     return NextResponse.json({
       msg: "Categories fetched successfully",
       err: false,
-      data,
+      data: formattedCategories,
     });
   } catch (error) {
     console.log(error);
     return NextResponse.json({
-      msg: "Seomthing went wrong while fetching the topics",
-      err: false,
+      msg: "Something went wrong while fetching the categories",
+      err: true,
       data: null,
     });
   }

@@ -20,7 +20,7 @@ export default function Home() {
   const [isTimedTest, setIsTimedTest] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState("Tests");
   const [categories, setCategories] = useState<
-    Array<{ id: string; name: string }>
+    Array<{ id: string; name: string; questionCount: number }>
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +37,8 @@ export default function Home() {
   const timeOptions = [1, 2, 3, 4];
   const { setTestData } = useTestContext();
   const { setSimulationTestData } = useSimulationTestContext();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [maxQuestionCount, setMaxQuestionCount] = useState<number | null>(null);
 
   useEffect(() => {
     setTestData(null);
@@ -153,6 +155,11 @@ export default function Home() {
   useEffect(() => {
     updateTestDuration();
   }, [customTime, customTimeUnit]);
+
+  // Add this function to filter categories based on search term
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white p-4">
@@ -335,8 +342,15 @@ export default function Home() {
             <h2 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">
               Choose a Category
             </h2>
-            <div className="space-y-3">
-              {categories.map((category) => (
+            <input
+              type="text"
+              placeholder="Search categories..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
+            />
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {filteredCategories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
@@ -346,7 +360,10 @@ export default function Home() {
                       : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
                   }`}
                 >
-                  {category.name}
+                  <span>{category.name}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {category.questionCount} questions
+                  </span>
                   {selectedCategory === category.id && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -443,37 +460,49 @@ export default function Home() {
             ) : error ? (
               <p className="text-center text-red-500">{error}</p>
             ) : (
-              <div className="space-y-3">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
-                      selectedCategory === category.id
-                        ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
-                        : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
-                    }`}
-                  >
-                    {category.name}
-                    {selectedCategory === category.id && (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-blue-500 dark:text-blue-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
+              <>
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
+                />
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {filteredCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                        selectedCategory === category.id
+                          ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                          : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                      }`}
+                    >
+                      <span>{category.name}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {category.questionCount} questions
+                      </span>
+                      {selectedCategory === category.id && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
             <button
               onClick={() => {
@@ -504,7 +533,7 @@ export default function Home() {
                 setSelectedCategory(null);
                 setQuestionCount(null);
               }}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               aria-label="Close"
             >
               <svg
@@ -526,6 +555,41 @@ export default function Home() {
               How many questions?
             </h2>
             <div className="space-y-3">
+              {/* Add the "Select All" button */}
+              {selectedCategory && (
+                <button
+                  onClick={() => {
+                    const category = categories.find(c => c.id === selectedCategory);
+                    if (category) {
+                      setQuestionCount(category.questionCount);
+                    }
+                  }}
+                  className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                    questionCount === categories.find(c => c.id === selectedCategory)?.questionCount
+                      ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                      : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                  }`}
+                >
+                  Select All ({categories.find(c => c.id === selectedCategory)?.questionCount})
+                  {questionCount === categories.find(c => c.id === selectedCategory)?.questionCount && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </button>
+              )}
+              
               {questionOptions.map((count) => (
                 <button
                   key={count}
@@ -565,11 +629,17 @@ export default function Home() {
                   }
                   className="w-full px-4 py-3 text-lg rounded-md border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
                 />
-              </div>
+              </div> 
             </div>
             <button
               onClick={() => {
-                if (questionCount) {
+                const selectedCategoryQuestions = categories.find(c => c.id === selectedCategory)?.questionCount;
+                
+                if (selectedCategoryQuestions === undefined) {
+                  toast.error("Selected category not found");
+                } else if (questionCount && questionCount > selectedCategoryQuestions) {
+                  toast.error("You can't select more questions than the category has");
+                } else {
                   setShowQuestionCountDialog(false);
                   setShowTimerDialog(true);
                 }
@@ -593,8 +663,6 @@ export default function Home() {
             <button
               onClick={() => {
                 setShowTimerDialog(false);
-                setSelectedCategory(null);
-                setQuestionCount(null);
                 setIsTimedTest(false);
               }}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
