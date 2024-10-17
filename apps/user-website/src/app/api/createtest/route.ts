@@ -20,6 +20,7 @@ export const POST = async (req: NextRequest) => {
     let responseData;
 
     if (testDetails.testType === "SIMULATION") {
+      console.log("Creating SIMULATION test");
       const singleAnswerQuestions = await prisma.question.findMany({
         where: {
           isMultipleAnswer: false,
@@ -74,6 +75,7 @@ export const POST = async (req: NextRequest) => {
           id: true,
           singleQuestion: {
             select: {
+              id: true,
               title: true,
               choice: {
                 select: {
@@ -85,6 +87,7 @@ export const POST = async (req: NextRequest) => {
           },
           multipleQuestion: {
             select: {
+              id: true,
               title: true,
               choice: {
                 select: {
@@ -103,14 +106,16 @@ export const POST = async (req: NextRequest) => {
       responseData = {
         id: simulationTestDetail.id,
         singleQuestion: simulationTestDetail.singleQuestion.map(
-          ({ choice, ...rest }) => ({
-            ...rest,
+          ({ id, title, choice }) => ({
+            questionId: id,
+            title,
             choice: choice.map(({ id, text }) => ({ id, text })),
           })
         ),
         multipleQuestion: simulationTestDetail.multipleQuestion.map(
-          ({ choice, ...rest }) => ({
-            ...rest,
+          ({ id, title, choice }) => ({
+            questionId: id,
+            title,
             choice: choice.map(({ id, text }) => ({ id, text })),
           })
         ),
@@ -119,6 +124,7 @@ export const POST = async (req: NextRequest) => {
         duration: simulationTestDetail.duration,
       };
 
+      console.log("SIMULATION test created successfully", responseData);
       return NextResponse.json({
         msg: "SIMULATION test created successfully",
         err: false,

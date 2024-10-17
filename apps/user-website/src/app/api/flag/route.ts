@@ -9,7 +9,9 @@ interface FlagData {
 
 export const POST = async (req: NextRequest) => {
   try {
+    console.log("Flagging question");
     const data: FlagData = await req.json();
+    console.log("Flag data:", data);
     if (
       data.questionId === undefined ||
       data.flagReason === undefined ||
@@ -20,12 +22,14 @@ export const POST = async (req: NextRequest) => {
         msg: "Missing required fields",
       });
     }
+
     const question = await prisma.question.findUnique({
       where: {
         id: data.questionId,
       },
     });
     if (!question) {
+      console.log("Question not found");
       return NextResponse.json({
         error: true,
         msg: "Question not found",

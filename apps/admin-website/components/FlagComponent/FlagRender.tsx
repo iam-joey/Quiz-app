@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertCircle,
   CheckCircle,
@@ -11,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Flag {
   id: string;
@@ -23,21 +26,37 @@ interface Flag {
 
 const ITEMS_PER_PAGE = 30;
 
-function generateMockFlags(count: number): Flag[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `${i + 1}`,
-    questionId: `q${i + 1}`,
-    userId: `user${i + 1}`,
-    description: `This is a mock flag description for flag ${i + 1}`,
-    resolved: Math.random() > 0.5,
-    comment: Math.random() > 0.7 ? `Comment for flag ${i + 1}` : undefined,
-  }));
-}
-
 export default function FlagManager() {
-  const [flags, setFlags] = useState<Flag[]>(generateMockFlags(100));
+  const [flags, setFlags] = useState<Flag[]>([]);
   const [selectedFlag, setSelectedFlag] = useState<Flag | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"unresolved" | "resolved">(
+    "unresolved"
+  );
+
+  const fetchFlags = async (resolved: boolean) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/flags?resolved=${resolved}`);
+      const data = await response.json();
+
+      if (!data.error && data.flags) {
+        setFlags(data.flags);
+      } else {
+        toast.error(data.msg || "Failed to fetch flags");
+      }
+    } catch (error) {
+      toast.error("Error fetching flags");
+      console.error("Error fetching flags:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFlags(activeTab === "resolved");
+  }, [activeTab]);
 
   const totalPages = Math.ceil(flags.length / ITEMS_PER_PAGE);
   const paginatedFlags = flags.slice(
@@ -53,20 +72,32 @@ export default function FlagManager() {
     setSelectedFlag(null);
   };
 
-  const handleResolveFlag = (id: string) => {
-    setFlags((prevFlags) =>
-      prevFlags.map((flag) =>
-        flag.id === id ? { ...flag, resolved: true } : flag
-      )
-    );
-    setSelectedFlag(null);
-  };
+  const handleUpdateFlag = async (
+    id: string,
+    resolved: boolean,
+    comment: string
+  ) => {
+    try {
+      const response = await fetch(`/api/flags/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ resolved, comment }),
+      });
+      const data = await response.json();
 
-  const handleAddComment = (id: string, comment: string) => {
-    setFlags((prevFlags) =>
-      prevFlags.map((flag) => (flag.id === id ? { ...flag, comment } : flag))
-    );
-    setSelectedFlag((prevFlag) => (prevFlag ? { ...prevFlag, comment } : null));
+      if (!data.error) {
+        setFlags((prevFlags) => prevFlags.filter((flag) => flag.id !== id));
+        setSelectedFlag(null);
+        toast.success("Flag updated successfully");
+      } else {
+        toast.error(data.msg || "Failed to update flag");
+      }
+    } catch (error) {
+      toast.error("Error updating flag");
+      console.error("Error updating flag:", error);
+    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -109,61 +140,51 @@ export default function FlagManager() {
   function FlagFullView({
     flag,
     onClose,
-    onResolve,
-    onAddComment,
+    onUpdate,
   }: {
     flag: Flag;
     onClose: () => void;
-    onResolve: (id: string) => void;
-    onAddComment: (id: string, comment: string) => void;
+    onUpdate: (id: string, resolved: boolean, comment: string) => void;
   }) {
+    const [resolved, setResolved] = useState(flag.resolved);
     const [comment, setComment] = useState(flag.comment || "");
 
-    const handleResolve = () => {
-      onResolve(flag.id);
-    };
-
-    const handleAddComment = () => {
-      onAddComment(flag.id, comment);
+    const handleSubmit = () => {
+      onUpdate(flag.id, resolved, comment);
     };
 
     return (
       <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-auto p-4 flex items-center justify-center">
         <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Flag Details</CardTitle>
-            <Button
-              variant="ghost"
-              className="absolute right-2 top-2"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Flag Details</h2>
+              <Button variant="ghost" onClick={onClose}>
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
             <div>
               <strong>Question ID:</strong> {flag.questionId}
             </div>
             <div>
               <strong>User ID:</strong> {flag.userId}
             </div>
-            <div>
-              <strong>Status:</strong>{" "}
-              <span
-                className={flag.resolved ? "text-green-600" : "text-red-600"}
-              >
-                {flag.resolved ? "Resolved" : "Unresolved"}
+            <div className="flex items-center space-x-2">
+              <strong>Status:</strong>
+              <Switch
+                checked={resolved}
+                onCheckedChange={setResolved}
+                aria-label="Toggle resolved status"
+              />
+              <span className={resolved ? "text-green-600" : "text-red-600"}>
+                {resolved ? "Resolved" : "Unresolved"}
               </span>
             </div>
             <div>
               <strong>Description:</strong>
               <p className="bg-muted p-4 rounded mt-2">{flag.description}</p>
             </div>
-            {!flag.resolved && (
-              <Button onClick={handleResolve} className="w-full">
-                Mark as Resolved
-              </Button>
-            )}
             <div>
               <strong>Admin Comment:</strong>
               <Textarea
@@ -172,10 +193,10 @@ export default function FlagManager() {
                 className="mt-2"
                 rows={4}
               />
-              <Button onClick={handleAddComment} className="mt-2 w-full">
-                Add Comment
-              </Button>
             </div>
+            <Button onClick={handleSubmit} className="w-full">
+              Submit
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -231,6 +252,7 @@ export default function FlagManager() {
           disabled={currentPage === 1}
         >
           <ChevronLeft className="h-4 w-4" />
+          <span className="sr-only">Previous page</span>
         </Button>
         {pageNumbers.map((number, index) => (
           <Button
@@ -250,6 +272,7 @@ export default function FlagManager() {
           disabled={currentPage === totalPages}
         >
           <ChevronRight className="h-4 w-4" />
+          <span className="sr-only">Next page</span>
         </Button>
       </div>
     );
@@ -258,31 +281,66 @@ export default function FlagManager() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Flag Manager</h1>
-      {selectedFlag ? (
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) =>
+          setActiveTab(value as "unresolved" | "resolved")
+        }
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="unresolved">Unresolved</TabsTrigger>
+          <TabsTrigger value="resolved">Resolved</TabsTrigger>
+        </TabsList>
+        <TabsContent value="unresolved">{renderFlagList()}</TabsContent>
+        <TabsContent value="resolved">{renderFlagList()}</TabsContent>
+      </Tabs>
+    </div>
+  );
+
+  function renderFlagList() {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
+
+    if (selectedFlag) {
+      return (
         <FlagFullView
           flag={selectedFlag}
           onClose={handleCloseFullView}
-          onResolve={handleResolveFlag}
-          onAddComment={handleAddComment}
+          onUpdate={handleUpdateFlag}
         />
-      ) : (
-        <>
-          <div className="grid gap-4">
-            {paginatedFlags.map((flag) => (
-              <FlagItem
-                key={flag.id}
-                flag={flag}
-                onClick={() => handleFlagClick(flag)}
-              />
-            ))}
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
-      )}
-    </div>
-  );
+      );
+    }
+
+    if (flags.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          No flags found
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="grid gap-4">
+          {paginatedFlags.map((flag) => (
+            <FlagItem
+              key={flag.id}
+              flag={flag}
+              onClick={() => handleFlagClick(flag)}
+            />
+          ))}
+        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </>
+    );
+  }
 }

@@ -155,7 +155,7 @@ export default function Home() {
   }, [customTime, customTimeUnit]);
 
   // Add this function to filter categories based on search term
-  const filteredCategories = categories.filter(category =>
+  const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -580,19 +580,30 @@ export default function Home() {
               {selectedCategory && (
                 <button
                   onClick={() => {
-                    const category = categories.find(c => c.id === selectedCategory);
+                    const category = categories.find(
+                      (c) => c.id === selectedCategory
+                    );
                     if (category) {
                       setQuestionCount(category.questionCount);
                     }
                   }}
                   className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
-                    questionCount === categories.find(c => c.id === selectedCategory)?.questionCount
+                    questionCount ===
+                    categories.find((c) => c.id === selectedCategory)
+                      ?.questionCount
                       ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
                       : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
                   }`}
                 >
-                  Select All ({categories.find(c => c.id === selectedCategory)?.questionCount})
-                  {questionCount === categories.find(c => c.id === selectedCategory)?.questionCount && (
+                  Select All (
+                  {
+                    categories.find((c) => c.id === selectedCategory)
+                      ?.questionCount
+                  }
+                  )
+                  {questionCount ===
+                    categories.find((c) => c.id === selectedCategory)
+                      ?.questionCount && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-6 w-6 text-blue-500 dark:text-blue-300"
@@ -649,16 +660,23 @@ export default function Home() {
                   }
                   className="w-full px-4 py-3 text-lg rounded-md border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
                 />
-              </div> 
+              </div>
             </div>
             <button
               onClick={() => {
-                const selectedCategoryQuestions = categories.find(c => c.id === selectedCategory)?.questionCount;
-                
+                const selectedCategoryQuestions = categories.find(
+                  (c) => c.id === selectedCategory
+                )?.questionCount;
+
                 if (selectedCategoryQuestions === undefined) {
                   toast.error("Selected category not found");
-                } else if (questionCount && questionCount > selectedCategoryQuestions) {
-                  toast.error("You can't select more questions than the category has");
+                } else if (
+                  questionCount &&
+                  questionCount > selectedCategoryQuestions
+                ) {
+                  toast.error(
+                    "You can't select more questions than the category has"
+                  );
                 } else {
                   setShowQuestionCountDialog(false);
                   setShowTimerDialog(true);

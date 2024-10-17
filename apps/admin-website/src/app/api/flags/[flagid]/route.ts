@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 interface FlagData {
   comment?: string;
+  resolved?: boolean;
 }
 
 export const POST = async (
@@ -18,12 +19,14 @@ export const POST = async (
   try {
     const flagId = params.flagid;
     const data: FlagData = await req.json();
-    if (data.comment === undefined) {
+
+    if (data.resolved === undefined && !data.comment) {
       return NextResponse.json({
         error: true,
-        msg: "Add comment to resolve the flag",
+        msg: "Please provide a comment or resolved status",
       });
     }
+
     const flag = await prisma.flag.findUnique({
       where: {
         id: flagId,

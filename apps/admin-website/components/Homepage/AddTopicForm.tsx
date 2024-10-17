@@ -1,4 +1,6 @@
 "use client";
+
+import { useState, useTransition, Dispatch, SetStateAction } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,23 +11,59 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { createTopic } from "@/src/lib/actions";
-import { useState } from "react";
 import { toast } from "sonner";
-export default function AddTopicForm() {
+
+type Topic = {
+  id: string;
+  name: string;
+  question: any[];
+  deleted?: boolean;
+};
+
+type CreateTopicResponse = {
+  err: boolean;
+  msg: string;
+  data: {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    deleted: boolean;
+  } | null;
+};
+
+type AddTopicFormProps = {
+  setTopics: Dispatch<SetStateAction<Topic[]>>;
+};
+
+export default function AddTopicForm({ setTopics }: AddTopicFormProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const result = await createTopic(formData);
-    console.log("result is", result);
-    if (!result.err) {
-      toast.success(result.msg || "Topic created successfully!");
-      setIsDialogOpen(false);
-    } else {
-      toast.warning(result.msg);
-    }
+
+    startTransition(async () => {
+      const result = (await createTopic(formData)) as CreateTopicResponse;
+
+      if (!result.err && result.data) {
+        const newTopic: Topic = {
+          id: result.data.id,
+          name: result.data.name,
+          question: [],
+          deleted: result.data.deleted,
+        };
+        setTopics((prevTopics) => [...prevTopics, newTopic]);
+        toast.success(result.msg || "Topic created successfully!");
+        setIsDialogOpen(false);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        toast.warning(result.msg);
+      }
+    });
   };
 
   return (
@@ -44,15 +82,30 @@ export default function AddTopicForm() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="topicName">Topic Name</label>
+            <label
+              htmlFor="topicName"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Topic Name
+            </label>
             <Input
               id="topicName"
               name="topicName"
               placeholder="Enter topic name"
               required
+              disabled={isPending}
             />
           </div>
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={isPending} className="w-full">
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit"
+            )}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

@@ -3,11 +3,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { useTheme } from "@/components/context/ThemeContext";
-import TestResults from "@/src/components/TestResults/page";
 import { toast } from "sonner";
 import { useTestContext } from "@/components/context/TestContext";
 import { useSimulationTestContext } from "@/components/context/SimulationTestContext";
-import { object } from "zod";
 
 interface Question {
   id: string;
@@ -152,8 +150,12 @@ export default function TestPage() {
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
   const [testType, setTestType] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(`testType_${params.testId}`) || searchParams.get("type") || "NOTIMER";
+    if (typeof window !== "undefined") {
+      return (
+        localStorage.getItem(`testType_${params.testId}`) ||
+        searchParams.get("type") ||
+        "NOTIMER"
+      );
     }
     return "NOTIMER";
   });
@@ -162,7 +164,9 @@ export default function TestPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [skippedQuestions, setSkippedQuestions] = useState<Set<number>>(() => {
     if (typeof window !== "undefined") {
-      const savedSkipped = localStorage.getItem(`testProgress_${params.testId}_skipped`);
+      const savedSkipped = localStorage.getItem(
+        `testProgress_${params.testId}_skipped`
+      );
       return savedSkipped ? new Set(JSON.parse(savedSkipped)) : new Set();
     }
     return new Set();
@@ -195,13 +199,17 @@ export default function TestPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(() => {
-    if (typeof window !== "undefined") {
-      const savedAnswered = localStorage.getItem(`testProgress_${params.testId}_answered`);
-      return savedAnswered ? new Set(JSON.parse(savedAnswered)) : new Set();
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(
+    () => {
+      if (typeof window !== "undefined") {
+        const savedAnswered = localStorage.getItem(
+          `testProgress_${params.testId}_answered`
+        );
+        return savedAnswered ? new Set(JSON.parse(savedAnswered)) : new Set();
+      }
+      return new Set();
     }
-    return new Set();
-  });
+  );
   const [showQuestionList, setShowQuestionList] = useState(false);
   const [highlightedOption, setHighlightedOption] = useState<number>(-1);
 
@@ -223,7 +231,10 @@ export default function TestPage() {
   }, [currentQuestionIndex, selectedAnswers, saveProgress]);
 
   const handleSubmit = async (forcedSubmit = false) => {
-    // if(testType === "SIMULATION" && Object.keys(selectedAnswers).length !== 200){
+    // if (
+    //   testType === "SIMULATION" &&
+    //   Object.keys(selectedAnswers).length !== 200
+    // ) {
     //   toast.error("Please answer all questions");
     //   return;
     // }
@@ -396,14 +407,14 @@ export default function TestPage() {
 
       if (cachedSimulationData) {
         const parsedData = JSON.parse(cachedSimulationData);
-        console.log("Using simulationTestData from localStorage");
+        console.log("Using simulationTestData from localStorage", parsedData);
         setSimulationTestData(parsedData);
         // ... handle simulation test data (similar to the context handling above)
         // ... set questions, isTimed, remainingTime, etc.
         return;
       } else if (cachedData) {
         const parsedData = JSON.parse(cachedData);
-        console.log("Using testData from localStorage");
+        console.log("Using testData from localStorage", parsedData);
         setTestData(parsedData);
         setQuestions(parsedData.question);
         setIsTimed(parsedData.testType === "TIMER");
@@ -464,14 +475,20 @@ export default function TestPage() {
       }
 
       // After setting questions, load saved answers, skipped, and answered questions
-      const savedAnswers = localStorage.getItem(`testProgress_${params.testId}_answers`);
-      const savedSkipped = localStorage.getItem(`testProgress_${params.testId}_skipped`);
-      const savedAnswered = localStorage.getItem(`testProgress_${params.testId}_answered`);
+      const savedAnswers = localStorage.getItem(
+        `testProgress_${params.testId}_answers`
+      );
+      const savedSkipped = localStorage.getItem(
+        `testProgress_${params.testId}_skipped`
+      );
+      const savedAnswered = localStorage.getItem(
+        `testProgress_${params.testId}_answered`
+      );
 
       if (savedAnswers) {
         const parsedAnswers = JSON.parse(savedAnswers);
         setSelectedAnswers(parsedAnswers);
-        
+
         // Update answeredQuestions based on saved answers
         const answered = new Set(Object.keys(parsedAnswers).map(Number));
         setAnsweredQuestions(answered);
@@ -488,8 +505,18 @@ export default function TestPage() {
     if (questions.length === 0) {
       fetchQuestions();
     }
-  }, [testData, setTestData, simulationTestData, setSimulationTestData, params.testId, searchParams, router, isTimed, remainingTime]);
-  
+  }, [
+    testData,
+    setTestData,
+    simulationTestData,
+    setSimulationTestData,
+    params.testId,
+    searchParams,
+    router,
+    isTimed,
+    remainingTime,
+  ]);
+
   useEffect(() => {
     if (isTimed && remainingTime !== null) {
       const timer = setInterval(() => {
@@ -514,51 +541,66 @@ export default function TestPage() {
 
   // Update local storage whenever selectedAnswers changes
   useEffect(() => {
-    localStorage.setItem(`testProgress_${params.testId}_answers`, JSON.stringify(selectedAnswers));
-    localStorage.setItem(`testProgress_${params.testId}_skipped`, JSON.stringify([...skippedQuestions]));
-    localStorage.setItem(`testProgress_${params.testId}_answered`, JSON.stringify([...answeredQuestions]));
+    localStorage.setItem(
+      `testProgress_${params.testId}_answers`,
+      JSON.stringify(selectedAnswers)
+    );
+    localStorage.setItem(
+      `testProgress_${params.testId}_skipped`,
+      JSON.stringify([...skippedQuestions])
+    );
+    localStorage.setItem(
+      `testProgress_${params.testId}_answered`,
+      JSON.stringify([...answeredQuestions])
+    );
   }, [selectedAnswers, skippedQuestions, answeredQuestions, params.testId]);
 
-  const handleAnswerSelect = useCallback((questionId: string, answerId: string) => {
-    setSelectedAnswers((prev) => {
-      let updatedAnswers;
-      
-      if (testType === "SIMULATION" && currentQuestionIndex < 50) {
-        updatedAnswers = [answerId];
-      } else {
-        const currentAnswers = prev[questionId] || [];
-        updatedAnswers = currentAnswers.includes(answerId)
-          ? currentAnswers.filter((id) => id !== answerId)
-          : [...currentAnswers, answerId];
-      }
-      
-      const newState = { ...prev, [questionId]: updatedAnswers };
-      selectedAnswersRef.current = newState;
-      
-      // Save to local storage immediately after updating state
-      localStorage.setItem(`testProgress_${params.testId}_answers`, JSON.stringify(newState));
-      
-      // Update answeredQuestions
-      setAnsweredQuestions(prevAnswered => {
-        const newAnswered = new Set(prevAnswered);
-        if (updatedAnswers.length > 0) {
-          newAnswered.add(currentQuestionIndex);
+  const handleAnswerSelect = useCallback(
+    (questionId: string, answerId: string) => {
+      setSelectedAnswers((prev) => {
+        let updatedAnswers;
+
+        if (testType === "SIMULATION" && currentQuestionIndex < 50) {
+          updatedAnswers = [answerId];
         } else {
-          newAnswered.delete(currentQuestionIndex);
+          const currentAnswers = prev[questionId] || [];
+          updatedAnswers = currentAnswers.includes(answerId)
+            ? currentAnswers.filter((id) => id !== answerId)
+            : [...currentAnswers, answerId];
         }
-        return newAnswered;
+
+        const newState = { ...prev, [questionId]: updatedAnswers };
+        selectedAnswersRef.current = newState;
+
+        // Save to local storage immediately after updating state
+        localStorage.setItem(
+          `testProgress_${params.testId}_answers`,
+          JSON.stringify(newState)
+        );
+
+        // Update answeredQuestions
+        setAnsweredQuestions((prevAnswered) => {
+          const newAnswered = new Set(prevAnswered);
+          if (updatedAnswers.length > 0) {
+            newAnswered.add(currentQuestionIndex);
+          } else {
+            newAnswered.delete(currentQuestionIndex);
+          }
+          return newAnswered;
+        });
+
+        // Remove from skippedQuestions if it was previously skipped
+        setSkippedQuestions((prevSkipped) => {
+          const newSkipped = new Set(prevSkipped);
+          newSkipped.delete(currentQuestionIndex);
+          return newSkipped;
+        });
+
+        return newState;
       });
-      
-      // Remove from skippedQuestions if it was previously skipped
-      setSkippedQuestions(prevSkipped => {
-        const newSkipped = new Set(prevSkipped);
-        newSkipped.delete(currentQuestionIndex);
-        return newSkipped;
-      });
-      
-      return newState;
-    });
-  }, [testType, currentQuestionIndex, params.testId]);
+    },
+    [testType, currentQuestionIndex, params.testId]
+  );
 
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -576,7 +618,7 @@ export default function TestPage() {
 
   const handleSkipQuestion = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
-      setSkippedQuestions(prev => {
+      setSkippedQuestions((prev) => {
         const newSkipped = new Set(prev);
         newSkipped.add(currentQuestionIndex);
         return newSkipped;
@@ -603,52 +645,72 @@ export default function TestPage() {
     );
   };
 
-  const handleKeyPress = useCallback((event: KeyboardEvent) => {
-    const currentQuestion = questions[currentQuestionIndex];
-    if (!currentQuestion) return;
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      const currentQuestion = questions[currentQuestionIndex];
+      if (!currentQuestion) return;
 
-    const handleCurrentQuestion = (question: Question) => {
-      switch (event.key) {
-        case ' ':
-          handleSkipQuestion();
-          break;
-        case 'Enter':
-          if (question.choice && question.choice.length > 0) {
-            if (highlightedOption !== -1 && question.choice[highlightedOption]) {
-              handleAnswerSelect(question.id, question.choice[highlightedOption].id);
+      const handleCurrentQuestion = (question: Question) => {
+        switch (event.key) {
+          case " ":
+            handleSkipQuestion();
+            break;
+          case "Enter":
+            if (question.choice && question.choice.length > 0) {
+              if (
+                highlightedOption !== -1 &&
+                question.choice[highlightedOption]
+              ) {
+                handleAnswerSelect(
+                  question.id,
+                  question.choice[highlightedOption].id
+                );
+              }
             }
-          }
-          break;
-        case 'ArrowLeft':
-          handlePreviousQuestion();
-          break;
-        case 'ArrowRight':
-          handleNextQuestion();
-          break;
-        case 'ArrowUp':
-        case 'ArrowDown':
-          if (question.choice && question.choice.length > 0) {
-            let newIndex: number;
-            if (highlightedOption === -1) {
-              newIndex = event.key === 'ArrowUp' ? question.choice.length - 1 : 0;
-            } else {
-              newIndex = event.key === 'ArrowUp'
-                ? (highlightedOption - 1 + question.choice.length) % question.choice.length
-                : (highlightedOption + 1) % question.choice.length;
+            break;
+          case "ArrowLeft":
+            handlePreviousQuestion();
+            break;
+          case "ArrowRight":
+            handleNextQuestion();
+            break;
+          case "ArrowUp":
+          case "ArrowDown":
+            if (question.choice && question.choice.length > 0) {
+              let newIndex: number;
+              if (highlightedOption === -1) {
+                newIndex =
+                  event.key === "ArrowUp" ? question.choice.length - 1 : 0;
+              } else {
+                newIndex =
+                  event.key === "ArrowUp"
+                    ? (highlightedOption - 1 + question.choice.length) %
+                      question.choice.length
+                    : (highlightedOption + 1) % question.choice.length;
+              }
+              setHighlightedOption(newIndex);
             }
-            setHighlightedOption(newIndex);
-          }
-          break;
-      }
-    };
+            break;
+        }
+      };
 
-    handleCurrentQuestion(currentQuestion);
-  }, [questions, currentQuestionIndex, handleSkipQuestion, handleNextQuestion, handlePreviousQuestion, handleAnswerSelect, highlightedOption]);
+      handleCurrentQuestion(currentQuestion);
+    },
+    [
+      questions,
+      currentQuestionIndex,
+      handleSkipQuestion,
+      handleNextQuestion,
+      handlePreviousQuestion,
+      handleAnswerSelect,
+      highlightedOption,
+    ]
+  );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
     return () => {
-      window.removeEventListener('keydown', handleKeyPress);
+      window.removeEventListener("keydown", handleKeyPress);
     };
   }, [handleKeyPress]);
 
@@ -788,8 +850,8 @@ export default function TestPage() {
                     selectedAnswers[currentQuestion?.id]?.includes(option.id)
                       ? "bg-blue-600 text-white"
                       : highlightedOption === index
-                      ? "bg-gray-200 dark:bg-gray-600"
-                      : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
+                        ? "bg-gray-200 dark:bg-gray-600"
+                        : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
                   onClick={() =>
                     handleAnswerSelect(currentQuestion.id, option.id)

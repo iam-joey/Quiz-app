@@ -19,6 +19,11 @@ export const GET = async (
       },
       select: {
         UserTestDetail: {
+          // where: {
+          //   category: {
+          //     deleted: false,
+          //   },
+          // },
           select: {
             isCompleted: true,
             correctAnswers: true,
@@ -33,6 +38,11 @@ export const GET = async (
           },
         },
         SimulationTestDetail: {
+          // where: {
+          //   category: {
+          //     deleted: false,
+          //   },
+          // },
           select: {
             isCompleted: true,
             correctAnswers: true,
@@ -48,7 +58,7 @@ export const GET = async (
         },
       },
     });
-
+    console.log("this is", data);
     if (!data) {
       return NextResponse.json({
         msg: "Invalid User",
@@ -57,7 +67,7 @@ export const GET = async (
       });
     }
     return NextResponse.json({
-      msg: "successfull fetcehed the data",
+      msg: "Successfully fetched the data",
       err: false,
       data,
     });

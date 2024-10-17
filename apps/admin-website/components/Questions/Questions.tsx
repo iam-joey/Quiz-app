@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Upload, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Search from "../Search/Search";
-import { Router } from "next/router";
 import { useRouter } from "next/navigation";
 
 type Choice = {
@@ -43,6 +42,10 @@ export default function AdminDashboard({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [loadingQuestionId, setLoadingQuestionId] = useState<string | null>(
+    null
+  );
+  const router = useRouter();
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -88,7 +91,12 @@ export default function AdminDashboard({
       setUploading(false);
     }
   };
-  const router = useRouter();
+
+  const handleQuestionClick = (questionId: string) => {
+    setLoadingQuestionId(questionId);
+    router.push(`/viewtopic/${questionId}`);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <Card className="mb-8">
@@ -130,16 +138,27 @@ export default function AdminDashboard({
                 <div className="flex items-center justify-between">
                   <CardTitle
                     className="text-sm font-bold truncate mr-2"
-                    onClick={() => {
-                      router.push(`/viewtopic/${q.id}`);
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleQuestionClick(q.id);
                     }}
                   >
-                    {q.question}
+                    {loadingQuestionId === q.id ? (
+                      <div className="flex items-center">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </div>
+                    ) : (
+                      q.question
+                    )}
                   </CardTitle>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => toggleExpand(q.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(q.id);
+                    }}
                   >
                     {expandedId === q.id ? (
                       <ChevronUp className="h-4 w-4" />

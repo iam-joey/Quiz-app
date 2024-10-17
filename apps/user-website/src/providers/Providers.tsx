@@ -7,7 +7,7 @@ import { Toaster } from "sonner";
 export const Providers = ({ children }: { children: ReactNode }) => {
   return (
     <>
-      <Toaster closeButton duration={1000} position="top-center" richColors />
+      <Toaster closeButton duration={1500} position="top-center" richColors />
       <ThemeProvider attribute="class" defaultTheme="dark">
         <SessionProvider>{children}</SessionProvider>
       </ThemeProvider>

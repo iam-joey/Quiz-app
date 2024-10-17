@@ -3,9 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
   try {
+    const url = new URL(req.url);
+    const resolvedParam = url.searchParams.get("resolved");
+    const resolved = resolvedParam === "true";
     const flags = await prisma.flag.findMany({
       where: {
-        resolved: false,
+        resolved: resolved,
       },
       select: {
         id: true,
