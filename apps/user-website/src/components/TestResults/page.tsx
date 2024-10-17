@@ -3,9 +3,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
-import { FlagIcon } from "@heroicons/react/24/outline";
+import { FlagIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useSession } from "next-auth/react";
 import { authOptions } from "@/src/lib/auth";
+import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Question {
   id: string;
@@ -120,12 +122,16 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
             question,
           });
 
+          console.log("testResult", testResult);
+
           setQuestions(question);
           console.log("questions set:", question);
         } else if (testType === "SIMULATION") {
           setSimulationTestResult(data.data);
         }
 
+        console.log("TestResult", testResult);
+        console.log("SimulationTestResult", simulationTestResult);
         toast.success("Test results loaded successfully!");
       } catch (error) {
         console.error("Failed to load test results:", error);
@@ -147,6 +153,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
 
   const handleFlagClick = (questionId: string) => {
     console.log("session", session);
+    console.log("questionId", questionId);
     setSelectedQuestionId(questionId);
     setFeedback("");
     dialogRef.current?.showModal();
@@ -155,36 +162,34 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Submitting feedback for question:", selectedQuestionId); //sending the wrong question idz
-    console.log("Feedback:", feedback);
-    console.log("User ID:", (session.data?.user as any)?.id);
     try {
-      const response = await fetch("/api/flag", {
-        method: "POST",
+      const requestBody = {
+        questionId: selectedQuestionId,
+        flagReason: feedback,
+        userId: (session.data?.user as any)?.id,
+      };
+      console.log("Sending flag request:", requestBody);
+
+      const response = await fetch('/api/flag', {
+        method: 'POST',
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          questionId: selectedQuestionId,
-          flagReason: feedback,
-          userId: (session.data?.user as any)?.id,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to submit flag");
-      }
-
       const data = await response.json();
-      if (data.error) {
-        throw new Error(data.msg);
+      console.log("Flag response:", data);
+
+      if (!response.ok || data.error) {
+        throw new Error(data.msg || 'Failed to submit flag');
       }
 
       toast.success("Question flagged successfully!");
       dialogRef.current?.close();
     } catch (error) {
       console.error("Error flagging question:", error);
-      toast.error("Failed to flag question");
+      toast.error(`Failed to flag question: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -204,9 +209,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   }
 
   return (
-    <>
-      <div className="flex justify-center">
-        <div className="max-w-3xl w-full px-4">
+    <TooltipProvider>
+      {/* Wrap your entire component with TooltipProvider */}
+      <div className="flex justify-between items-start max-w-7xl mx-auto px-4 py-8">
+        <Link
+          href="/history"
+          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+        >
+          <ArrowLeftIcon className="h-5 w-5 mr-2" />
+          Back to History
+        </Link>
+        <div className="flex-grow max-w-3xl mx-auto">
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Test Results</h2>
             {(testType === "TIMER" || testType === "NOTIMER") && testResult && (
@@ -224,10 +237,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                         Question {index + 1}
                       </h3>
                       <p className="mb-2">{question.question}</p>
-                      <FlagIcon
-                        className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                        onClick={() => handleFlagClick(question.id)}
-                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <FlagIcon
+                            className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                            onClick={() => handleFlagClick(question.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                          <p>Report to admin</p>
+                        </TooltipContent>
+                      </Tooltip>
                       <div className="space-y-2">
                         {question.choice.map((choice) => (
                           <div
@@ -283,10 +303,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           Question {index + 1} (Single)
                         </h3>
                         <p className="mb-2">{question.title}</p>
-                        <FlagIcon
-                          className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                          onClick={() => handleFlagClick(`${question.id}`)}
-                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FlagIcon
+                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                              onClick={() => handleFlagClick(`${question.id}`)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                            <p>Report to admin</p>
+                          </TooltipContent>
+                        </Tooltip>
                         <div className="space-y-2">
                           {question.choice.map((choice) => (
                             <div
@@ -329,10 +356,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           (Multiple)
                         </h3>
                         <p className="mb-2">{question.title}</p>
-                        <FlagIcon
-                          className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                          onClick={() => handleFlagClick(`${question.id}`)}
-                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FlagIcon
+                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                              onClick={() => handleFlagClick(`${question.id}`)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                            <p>Report to admin</p>
+                          </TooltipContent>
+                        </Tooltip>
                         <div className="space-y-2">
                           {question.choice.map((choice) => (
                             <div
@@ -400,7 +434,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
           </div>
         </form>
       </dialog>
-    </>
+    </TooltipProvider>
   );
 };
 
