@@ -105,13 +105,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
             userAnswers,
             question
           });
-          
+
+          console.log("testResult", testResult);
+
           setQuestions(question);
           console.log("questions set:", question);
         } else if(testType === "SIMULATION") {
           setSimulationTestResult(data.data);
         }
 
+        console.log("TestResult", testResult);
+        console.log("SimulationTestResult", simulationTestResult);
         toast.success("Test results loaded successfully!");
       } catch (error) {
         console.error("Failed to load test results:", error);
@@ -133,6 +137,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
 
   const handleFlagClick = (questionId: string) => {
     console.log("session", session);
+    console.log("questionId", questionId);
     setSelectedQuestionId(questionId);
     setFeedback("");
     dialogRef.current?.showModal();
@@ -141,34 +146,34 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
 
-
     try {
+      const requestBody = {
+        questionId: selectedQuestionId,
+        flagReason: feedback,
+        userId: (session.data?.user as any)?.id,
+      };
+      console.log("Sending flag request:", requestBody);
+
       const response = await fetch('/api/flag', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          questionId: selectedQuestionId,
-          flagReason: feedback,
-          userId: (session.data?.user as any)?.id,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to submit flag');
-      }
-
       const data = await response.json();
-      if (data.error) {
-        throw new Error(data.msg);
+      console.log("Flag response:", data);
+
+      if (!response.ok || data.error) {
+        throw new Error(data.msg || 'Failed to submit flag');
       }
 
       toast.success("Question flagged successfully!");
       dialogRef.current?.close();
     } catch (error) {
       console.error("Error flagging question:", error);
-      toast.error("Failed to flag question");
+      toast.error(`Failed to flag question: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

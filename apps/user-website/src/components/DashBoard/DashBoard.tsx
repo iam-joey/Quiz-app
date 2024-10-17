@@ -72,7 +72,7 @@ export default function Home() {
     fetchCategories();
   }, []);
 
-  const startTest = (isExamSimulation = false) => {
+  const startTest = async (isExamSimulation = false) => {
     setIsStartingTest(true);
     let testConfig = {
       userId: (session.data?.user as any)?.id,
@@ -102,36 +102,34 @@ export default function Home() {
       return;
     }
 
-    axios
-      .post("/api/createtest", testConfig)
-      .then((response) => {
-        if (!response.data.err) {
-          const testId = response.data.data;
-          const testIdWithIsCompleted = { ...testId, isCompleted: false };
+    try {
+      const response = await axios.post("/api/createtest", testConfig);
+      
+      if (!response.data.err) {
+        const testId = response.data.data;
+        const testIdWithIsCompleted = { ...testId, isCompleted: false };
 
-          if (isExamSimulation) {
-            setSimulationTestData(testIdWithIsCompleted);
-          } else {
-            setTestData(testIdWithIsCompleted);
-          }
-
-          localStorage.setItem(
-            `testData_${testId.id}`,
-            JSON.stringify(testIdWithIsCompleted)
-          );
-          router.push(`/test/${testId.id}?type=${testConfig.testType}`);
+        if (isExamSimulation) {
+          setSimulationTestData(testIdWithIsCompleted);
         } else {
-          console.error("Failed to create test:", response.data.error);
-          toast.error("Failed to create test. Please try again.");
+          setTestData(testIdWithIsCompleted);
         }
-      })
-      .catch((error) => {
-        console.error("Error creating test:", error);
-        toast.error("An error occurred. Please try again.");
-      });
-    // .finally(() => {
-    //   setIsStartingTest(false);
-    // });
+
+        localStorage.setItem(
+          `testData_${testId.id}`,
+          JSON.stringify(testIdWithIsCompleted)
+        );
+        router.push(`/test/${testId.id}?type=${testConfig.testType}`);
+      } else {
+        console.error("Failed to create test:", response.data.error);
+        toast.error("Failed to create test. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating test:", error);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsStartingTest(false);
+    }
   };
 
   const updateTestDuration = () => {
@@ -342,50 +340,73 @@ export default function Home() {
             <h2 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">
               Choose a Category
             </h2>
-            <input
-              type="text"
-              placeholder="Search categories..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
-            />
             <div className="space-y-3 max-h-60 overflow-y-auto">
-              {filteredCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
-                    selectedCategory === category.id
-                      ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
-                      : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
-                  }`}
-                >
-                  <span>{category.name}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {category.questionCount} questions
-                  </span>
-                  {selectedCategory === category.id && (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-blue-500 dark:text-blue-300"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
+              <button
+                onClick={() => setSelectedCategory('previous_papers')}
+                className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                  selectedCategory === 'previous_papers'
+                    ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                    : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                }`}
+              >
+                <span>Previous Papers</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Coming Soon
+                </span>
+                {selectedCategory === 'previous_papers' && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
+              </button>
+              <button
+                onClick={() => setSelectedCategory('exam_simulation')}
+                className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                  selectedCategory === 'exam_simulation'
+                    ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                    : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                }`}
+              >
+                <span>Exam Simulation</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  200 questions
+                </span>
+                {selectedCategory === 'exam_simulation' && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
+              </button>
             </div>
             <button
               onClick={() => {
-                startTest(true); // Pass true to indicate it's an exam simulation
+                if (selectedCategory === 'exam_simulation') {
+                  startTest(true); // Pass true to indicate it's an exam simulation
+                } else {
+                  toast.info("Previous Papers feature is coming soon!");
+                }
               }}
               className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out ${
                 selectedCategory && !isStartingTest
@@ -419,7 +440,7 @@ export default function Home() {
                   Starting Exam Simulation...
                 </span>
               ) : (
-                "Start Exam Simulation"
+                "Start"
               )}
             </button>
           </div>
@@ -589,7 +610,6 @@ export default function Home() {
                   )}
                 </button>
               )}
-              
               {questionOptions.map((count) => (
                 <button
                   key={count}
