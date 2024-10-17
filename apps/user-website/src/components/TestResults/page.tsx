@@ -3,9 +3,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
-import { FlagIcon } from "@heroicons/react/24/outline";
+import { FlagIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useSession } from "next-auth/react";
 import { authOptions } from "@/src/lib/auth";
+import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Question {
   id: string;
@@ -207,9 +209,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   }
 
   return (
-    <>
-      <div className="flex justify-center">
-        <div className="max-w-3xl w-full px-4">
+    <TooltipProvider>
+      {/* Wrap your entire component with TooltipProvider */}
+      <div className="flex justify-between items-start max-w-7xl mx-auto px-4 py-8">
+        <Link
+          href="/history"
+          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+        >
+          <ArrowLeftIcon className="h-5 w-5 mr-2" />
+          Back to History
+        </Link>
+        <div className="flex-grow max-w-3xl mx-auto">
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Test Results</h2>
             {(testType === "TIMER" || testType === "NOTIMER") && testResult && (
@@ -227,10 +237,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                         Question {index + 1}
                       </h3>
                       <p className="mb-2">{question.question}</p>
-                      <FlagIcon
-                        className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                        onClick={() => handleFlagClick(question.id)}
-                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <FlagIcon
+                            className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                            onClick={() => handleFlagClick(question.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                          <p>Report to admin</p>
+                        </TooltipContent>
+                      </Tooltip>
                       <div className="space-y-2">
                         {question.choice.map((choice) => (
                           <div
@@ -286,10 +303,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           Question {index + 1} (Single)
                         </h3>
                         <p className="mb-2">{question.title}</p>
-                        <FlagIcon
-                          className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                          onClick={() => handleFlagClick(`${question.id}`)}
-                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FlagIcon
+                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                              onClick={() => handleFlagClick(`${question.id}`)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                            <p>Report to admin</p>
+                          </TooltipContent>
+                        </Tooltip>
                         <div className="space-y-2">
                           {question.choice.map((choice) => (
                             <div
@@ -332,10 +356,17 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           (Multiple)
                         </h3>
                         <p className="mb-2">{question.title}</p>
-                        <FlagIcon
-                          className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                          onClick={() => handleFlagClick(`${question.id}`)}
-                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FlagIcon
+                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                              onClick={() => handleFlagClick(`${question.id}`)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                            <p>Report to admin</p>
+                          </TooltipContent>
+                        </Tooltip>
                         <div className="space-y-2">
                           {question.choice.map((choice) => (
                             <div
@@ -403,7 +434,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
           </div>
         </form>
       </dialog>
-    </>
+    </TooltipProvider>
   );
 };
 

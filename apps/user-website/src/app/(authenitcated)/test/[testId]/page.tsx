@@ -672,7 +672,10 @@ export default function TestPage() {
             handlePreviousQuestion();
             break;
           case "ArrowRight":
-            handleNextQuestion();
+            // Only move to next question if an answer is selected
+            if (isAnswerSelected(question.id)) {
+              handleNextQuestion();
+            }
             break;
           case "ArrowUp":
           case "ArrowDown":
@@ -704,6 +707,7 @@ export default function TestPage() {
       handlePreviousQuestion,
       handleAnswerSelect,
       highlightedOption,
+      isAnswerSelected, // Add this to the dependency array
     ]
   );
 
@@ -807,7 +811,7 @@ export default function TestPage() {
         <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 lg:p-6">
           <div className="flex flex-col lg:flex-row justify-between items-center mb-6">
             <h1 className="text-2xl lg:text-3xl font-bold mb-4 lg:mb-0">
-              {category || "General"} Test
+              {testType === "SIMULATION" ? "Simulation Exam" : "General Test"}
             </h1>
             <button
               className="w-full lg:w-auto bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors duration-200"

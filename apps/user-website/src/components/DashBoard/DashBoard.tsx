@@ -79,7 +79,7 @@ export default function Home() {
       isTimed: isTimedTest !== null ? isTimedTest : true,
       duration: testDuration ? Math.round(testDuration * 3600) : 0,
       numberOfQuestions: questionCount || 0,
-      categoryId: selectedCategory || "",
+      categoryId: isExamSimulation ? "cc5dcea4-0452-476f-bad3-1dc352739bd6" : selectedCategory || "",
       testType: isExamSimulation
         ? "SIMULATION"
         : isTimedTest
@@ -102,27 +102,35 @@ export default function Home() {
       return;
     }
 
+    console.log("testConfig", testConfig);
+
     try {
       const response = await axios.post("/api/createtest", testConfig);
+
+      console.log("response", response);
       
       if (!response.data.err) {
-        const testId = response.data.data;
-        const testIdWithIsCompleted = { ...testId, isCompleted: false };
+        const testData = response.data.data;
+        const testDataWithIsCompleted = { ...testData, isCompleted: false };
 
         if (isExamSimulation) {
-          setSimulationTestData(testIdWithIsCompleted);
+          setSimulationTestData(testDataWithIsCompleted);
+          localStorage.setItem(
+            `simulationTestData_${testData.id}`,
+            JSON.stringify(testDataWithIsCompleted)
+          );
         } else {
-          setTestData(testIdWithIsCompleted);
+          setTestData(testDataWithIsCompleted);
+          localStorage.setItem(
+            `testData_${testData.id}`,
+            JSON.stringify(testDataWithIsCompleted)
+          );
         }
 
-        localStorage.setItem(
-          `testData_${testId.id}`,
-          JSON.stringify(testIdWithIsCompleted)
-        );
-        router.push(`/test/${testId.id}?type=${testConfig.testType}`);
+        router.push(`/test/${testData.id}?type=${testConfig.testType}`);
       } else {
-        console.error("Failed to create test:", response.data.error);
-        toast.error("Failed to create test. Please try again.");
+        console.error("Failed to create test:", response.data.msg);
+        toast.error(response.data.msg || "Failed to create test. Please try again.");
       }
     } catch (error) {
       console.error("Error creating test:", error);
