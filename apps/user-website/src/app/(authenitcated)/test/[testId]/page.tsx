@@ -11,6 +11,7 @@ interface Question {
   id: string;
   question: string;
   choice: { id: string; text: string }[];
+  level: string;
 }
 
 interface TestResult {
@@ -392,6 +393,7 @@ export default function TestPage() {
             id: q.title, // Using title as id for simulation questions
             question: q.title,
             choice: q.choice,
+            level: q.level,
           }))
         );
         //set isTimed
@@ -852,6 +854,9 @@ export default function TestPage() {
           <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 lg:p-6 mb-8 max-h-[650px] overflow-y-auto">
             <h2 className="text-xl lg:text-2xl font-semibold mb-4">
               Question {currentQuestionIndex + 1} of {questions.length}
+            </h2>
+            <h2 className="text-xl lg:text-2xl font-semibold mb-4">
+              Level : {currentQuestion.level}
             </h2>
             <div className="mb-6 p-4 bg-white dark:bg-gray-600 rounded-lg shadow-inner">
               <p className="text-base lg:text-lg text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
