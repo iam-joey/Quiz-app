@@ -79,7 +79,9 @@ export default function Home() {
       isTimed: isTimedTest !== null ? isTimedTest : true,
       duration: testDuration ? Math.round(testDuration * 3600) : 0,
       numberOfQuestions: questionCount || 0,
-      categoryId: isExamSimulation ? "cc5dcea4-0452-476f-bad3-1dc352739bd6" : selectedCategory || "",
+      categoryId: isExamSimulation
+        ? "112d8622-e0f7-4099-a422-a9a3ad4220c1"
+        : selectedCategory || "",
       testType: isExamSimulation
         ? "SIMULATION"
         : isTimedTest
@@ -108,7 +110,7 @@ export default function Home() {
       const response = await axios.post("/api/createtest", testConfig);
 
       console.log("response", response);
-      
+
       if (!response.data.err) {
         const testData = response.data.data;
         const testDataWithIsCompleted = { ...testData, isCompleted: false };
@@ -130,7 +132,9 @@ export default function Home() {
         router.push(`/test/${testData.id}?type=${testConfig.testType}`);
       } else {
         console.error("Failed to create test:", response.data.msg);
-        toast.error(response.data.msg || "Failed to create test. Please try again.");
+        toast.error(
+          response.data.msg || "Failed to create test. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error creating test:", error);
@@ -350,9 +354,9 @@ export default function Home() {
             </h2>
             <div className="space-y-3 max-h-60 overflow-y-auto">
               <button
-                onClick={() => setSelectedCategory('previous_papers')}
+                onClick={() => setSelectedCategory("previous_papers")}
                 className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
-                  selectedCategory === 'previous_papers'
+                  selectedCategory === "previous_papers"
                     ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
                     : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
                 }`}
@@ -361,7 +365,7 @@ export default function Home() {
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   Coming Soon
                 </span>
-                {selectedCategory === 'previous_papers' && (
+                {selectedCategory === "previous_papers" && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6 text-blue-500 dark:text-blue-300"
@@ -379,9 +383,9 @@ export default function Home() {
                 )}
               </button>
               <button
-                onClick={() => setSelectedCategory('exam_simulation')}
+                onClick={() => setSelectedCategory("exam_simulation")}
                 className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
-                  selectedCategory === 'exam_simulation'
+                  selectedCategory === "exam_simulation"
                     ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
                     : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
                 }`}
@@ -390,7 +394,7 @@ export default function Home() {
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   200 questions
                 </span>
-                {selectedCategory === 'exam_simulation' && (
+                {selectedCategory === "exam_simulation" && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6 text-blue-500 dark:text-blue-300"
@@ -410,7 +414,7 @@ export default function Home() {
             </div>
             <button
               onClick={() => {
-                if (selectedCategory === 'exam_simulation') {
+                if (selectedCategory === "exam_simulation") {
                   startTest(true); // Pass true to indicate it's an exam simulation
                 } else {
                   toast.info("Previous Papers feature is coming soon!");
