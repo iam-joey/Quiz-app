@@ -18,12 +18,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import AddTopicForm from "./AddTopicForm";
-import { deleteCategory } from "@/src/lib/actions";
-import Link from "next/link";
+import { deleteCategory, editTopicName } from "@/src/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Edit } from "lucide-react";
 
 type Topic = {
   id: string;
@@ -39,7 +39,11 @@ export default function TopicList({
 }) {
   const [topics, setTopics] = useState(initialTopics);
   const [topicToDelete, setTopicToDelete] = useState<string | null>(null);
+  const [topicToEdit, setTopicToEdit] = useState<Topic | null>(null);
+  const [newTopicName, setNewTopicName] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loadingTopics, setLoadingTopics] = useState<{
     [key: string]: boolean;
   }>({});
@@ -64,6 +68,32 @@ export default function TopicList({
         router.refresh();
       }
       setTopicToDelete(null);
+    }
+  };
+
+  const handleEditConfirm = async () => {
+    if (topicToEdit && newTopicName) {
+      setIsEditing(true);
+      const result = await editTopicName(topicToEdit.id, newTopicName);
+      setIsEditing(false);
+      if (result.err) {
+        toast.warning(`Failed to edit topic name: ${result.msg}`);
+      } else {
+        setTopics(
+          topics.map((topic) =>
+            topic.id === topicToEdit.id
+              ? { ...topic, name: newTopicName }
+              : topic
+          )
+        );
+        toast.success("Topic name updated successfully");
+        router.refresh();
+        setIsEditDialogOpen(false); // Close the dialog on success
+      }
+      if (!result.err) {
+        setTopicToEdit(null);
+        setNewTopicName("");
+      }
     }
   };
 
@@ -110,42 +140,86 @@ export default function TopicList({
                   "View Questions"
                 )}
               </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setTopicToDelete(topic.id)}
-                  >
-                    Delete
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      Are you sure you want to delete this topic?
-                    </DialogTitle>
-                    <DialogDescription>
-                      This action cannot be undone. The topic will be marked as
-                      deleted and renamed.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
+              <div className="flex space-x-2">
+                <Dialog
+                  open={isEditDialogOpen}
+                  onOpenChange={setIsEditDialogOpen}
+                >
+                  <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      onClick={() => setTopicToDelete(null)}
+                      onClick={() => {
+                        setTopicToEdit(topic);
+                        setNewTopicName(topic.name);
+                        setIsEditDialogOpen(true);
+                      }}
                     >
-                      Cancel
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
                     </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Topic Name</DialogTitle>
+                      <DialogDescription>
+                        Enter a new name for the topic.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                      value={newTopicName}
+                      onChange={(e) => setNewTopicName(e.target.value)}
+                      placeholder="New topic name"
+                    />
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleEditConfirm} disabled={isEditing}>
+                        {isEditing ? "Updating..." : "Update"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Dialog>
+                  <DialogTrigger asChild>
                     <Button
                       variant="destructive"
-                      onClick={handleDeleteConfirm}
-                      disabled={isDeleting}
+                      onClick={() => setTopicToDelete(topic.id)}
                     >
-                      {isDeleting ? "Deleting..." : "Delete"}
+                      Delete
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>
+                        Are you sure you want to delete this topic?
+                      </DialogTitle>
+                      <DialogDescription>
+                        This action cannot be undone. The topic will be marked
+                        as deleted and renamed.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setTopicToDelete(null)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteConfirm}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardFooter>
           </Card>
         ))}

@@ -57,6 +57,14 @@ export function UserSetting() {
             >
               Flags
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                router.push("/deletedcategorys");
+              }}
+            >
+              deletedcategorys
+            </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>

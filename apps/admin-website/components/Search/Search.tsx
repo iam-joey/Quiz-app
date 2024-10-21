@@ -20,7 +20,7 @@ export default function Search() {
     >
       <Input
         type="search"
-        placeholder="Search..."
+        placeholder="Search with questionid...."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="flex-grow"

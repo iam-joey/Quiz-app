@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const categoryId = formData.get("categoryId") as string;
+
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
@@ -20,10 +21,33 @@ export async function POST(request: NextRequest) {
     const content = await file.text();
     const records = parse(content, { columns: true, skip_empty_lines: true });
 
+    const mapLevelToEnum = (level: string) => {
+      switch (level) {
+        case "1":
+          return "EASY";
+        case "2":
+          return "MEDIUM";
+        case "3":
+          return "HARD";
+        default:
+          return "EASY";
+      }
+    };
+
     for (const record of records) {
-      const { question, choice1, choice2, choice3, choice4, choice5, answer } =
-        record;
+      const {
+        question,
+        choice1,
+        choice2,
+        choice3,
+        choice4,
+        choice5,
+        answer,
+        level,
+      } = record;
       const isMultipleAnswer = answer.includes(",");
+
+      const levelEnum = mapLevelToEnum(level);
 
       const newQuestion = await prisma.question.create({
         data: {
@@ -31,6 +55,7 @@ export async function POST(request: NextRequest) {
           categoryId: categoryId,
           question: question,
           isMultipleAnswer: isMultipleAnswer,
+          level: levelEnum,
         },
       });
 
@@ -67,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "Questions and choices uploaded successfully",
+      message: "Questions, choices, and levels uploaded successfully",
     });
   } catch (error) {
     console.error("Error processing file:", error);

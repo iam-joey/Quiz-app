@@ -29,6 +29,17 @@ export const POST = async (req: NextRequest) => {
           },
         },
         take: 50,
+        select: {
+          id: true,
+          title: true,
+          choice: {
+            select: {
+              id: true,
+              text: true,
+            },
+          },
+          level: true,
+        },
       });
       const multipleAnswerQuestions = await prisma.question.findMany({
         where: {
@@ -38,6 +49,17 @@ export const POST = async (req: NextRequest) => {
           },
         },
         take: 150,
+        select: {
+          id: true,
+          title: true,
+          choice: {
+            select: {
+              id: true,
+              text: true,
+            },
+          },
+          level: true,
+        },
       });
 
       if (
@@ -83,6 +105,7 @@ export const POST = async (req: NextRequest) => {
                   text: true,
                 },
               },
+              level: true, // Include level for response
             },
           },
           multipleQuestion: {
@@ -95,6 +118,7 @@ export const POST = async (req: NextRequest) => {
                   text: true,
                 },
               },
+              level: true, // Include level for response
             },
           },
           testType: true,
@@ -106,16 +130,18 @@ export const POST = async (req: NextRequest) => {
       responseData = {
         id: simulationTestDetail.id,
         singleQuestion: simulationTestDetail.singleQuestion.map(
-          ({ id, title, choice }) => ({
+          ({ id, title, choice, level }) => ({
             questionId: id,
             title,
+            level, // Add level in the response
             choice: choice.map(({ id, text }) => ({ id, text })),
           })
         ),
         multipleQuestion: simulationTestDetail.multipleQuestion.map(
-          ({ id, title, choice }) => ({
+          ({ id, title, choice, level }) => ({
             questionId: id,
             title,
+            level, // Add level in the response
             choice: choice.map(({ id, text }) => ({ id, text })),
           })
         ),
@@ -138,6 +164,17 @@ export const POST = async (req: NextRequest) => {
           },
         },
         take: testDetails.numberOfQuestions,
+        select: {
+          id: true,
+          question: true,
+          choice: {
+            select: {
+              id: true,
+              text: true,
+            },
+          },
+          level: true, // Include level for response
+        },
       });
 
       const userTestDetail = await prisma.userTestDetail.create({
@@ -165,6 +202,7 @@ export const POST = async (req: NextRequest) => {
                   text: true,
                 },
               },
+              level: true, // Include level for response
             },
           },
           testType: true,
@@ -175,8 +213,9 @@ export const POST = async (req: NextRequest) => {
 
       responseData = {
         id: userTestDetail.id,
-        question: userTestDetail.question.map(({ choice, ...rest }) => ({
+        question: userTestDetail.question.map(({ choice, level, ...rest }) => ({
           ...rest,
+          level, // Add level in the response
           choice: choice.map(({ id, text }) => ({ id, text })),
         })),
         testType: userTestDetail.testType,

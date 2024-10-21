@@ -7,7 +7,12 @@ import { FlagIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useSession } from "next-auth/react";
 import { authOptions } from "@/src/lib/auth";
 import Link from "next/link";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Question {
   id: string;
@@ -170,8 +175,8 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
       };
       console.log("Sending flag request:", requestBody);
 
-      const response = await fetch('/api/flag', {
-        method: 'POST',
+      const response = await fetch("/api/flag", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -182,14 +187,16 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
       console.log("Flag response:", data);
 
       if (!response.ok || data.error) {
-        throw new Error(data.msg || 'Failed to submit flag');
+        throw new Error(data.msg || "Failed to submit flag");
       }
 
       toast.success("Question flagged successfully!");
       dialogRef.current?.close();
     } catch (error) {
       console.error("Error flagging question:", error);
-      toast.error(`Failed to flag question: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to flag question: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   };
 
@@ -213,11 +220,11 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
       {/* Wrap your entire component with TooltipProvider */}
       <div className="flex justify-between items-start max-w-7xl mx-auto px-4 py-8">
         <Link
-          href="/history"
+          href="/"
           className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
         >
           <ArrowLeftIcon className="h-5 w-5 mr-2" />
-          Back to History
+          Back to Home
         </Link>
         <div className="flex-grow max-w-3xl mx-auto">
           <div className="mt-8">

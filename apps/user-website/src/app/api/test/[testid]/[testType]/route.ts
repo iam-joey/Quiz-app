@@ -35,6 +35,7 @@ export const GET = async (
                 },
               },
               answer: true,
+              level: true,
             },
           },
           duration: true,
@@ -87,7 +88,7 @@ export const GET = async (
           isCompleted: true,
           singleQuestion: {
             select: {
-              id: true, // Add this line to include questionId
+              id: true, // Include questionId
               title: true,
               choice: {
                 select: {
@@ -96,11 +97,12 @@ export const GET = async (
                 },
               },
               answer: true,
+              level: true, // Include level for each question
             },
           },
           multipleQuestion: {
             select: {
-              id: true, // Add this line to include questionId
+              id: true, // Include questionId
               title: true,
               choice: {
                 select: {
@@ -109,6 +111,7 @@ export const GET = async (
                 },
               },
               answer: true,
+              level: true, // Include level for each question
             },
           },
           userAnswers: true,

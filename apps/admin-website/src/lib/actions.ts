@@ -313,3 +313,139 @@ export async function deleteCategory(id: string) {
     return { err: true, msg: "Failed to delete the category" };
   }
 }
+
+export async function getDeletedCategorys() {
+  try {
+    const deletedCategories = await prisma.category.findMany({
+      where: {
+        deleted: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (deletedCategories.length === 0) {
+      return {
+        err: true,
+        msg: "No deleted categories to undo",
+        data: null,
+      };
+    }
+
+    return {
+      err: false,
+      msg: "Successfully undone delete",
+      data: deletedCategories,
+    };
+  } catch (error) {
+    console.error("Error undoing delete category:", error);
+    return {
+      err: true,
+      msg: "Something went wrong while undo ",
+      data: null,
+    };
+  }
+}
+
+export async function undoDeleteCategory(id: string) {
+  try {
+    const findId = await prisma.category.findUnique({
+      where: { id },
+    });
+
+    if (!findId) {
+      return {
+        msg: "Category not present in db",
+        err: true,
+      };
+    }
+    const originalName = extractOriginalName(findId.name);
+    const idPresent = await prisma.category.findUnique({
+      where: {
+        name: originalName,
+        deleted: false,
+      },
+    });
+    if (idPresent) {
+      return {
+        msg: "Name with this category already present",
+        err: true,
+      };
+    }
+    await prisma.category.update({
+      where: { id },
+      data: {
+        deleted: false,
+        name: originalName,
+      },
+    });
+    revalidatePath("/");
+    return {
+      msg: "Category successfully restored",
+      err: false,
+    };
+  } catch (error) {
+    console.error("Error undoing delete category:", error);
+    return { err: true, msg: "Failed to undo delete" };
+  }
+}
+
+function extractOriginalName(fullName: string): string {
+  const parts = fullName.split("_");
+  if (parts.length >= 3) {
+    // Remove the first part ("deleted") and the last part (timestamp)
+    return parts.slice(1, -1).join("_");
+  }
+  return fullName; // Return the full name if it doesn't match the expected format
+}
+
+export async function editTopicName(id: string, newName: string) {
+  try {
+    const findId = await prisma.category.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!findId) {
+      return {
+        msg: "Topic not present in db",
+        err: true,
+      };
+    }
+
+    const findName = await prisma.category.findUnique({
+      where: {
+        name: newName,
+      },
+    });
+
+    if (findName) {
+      return {
+        msg: "Name already present",
+        err: true,
+      };
+    }
+
+    await prisma.category.update({
+      where: {
+        id,
+      },
+      data: {
+        name: newName,
+      },
+    });
+
+    return {
+      msg: "Topic name updated",
+      err: false,
+    };
+  } catch (error) {
+    return {
+      msg: "Something went wrong while updating",
+      err: true,
+    };
+  }
+}
