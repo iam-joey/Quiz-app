@@ -11,6 +11,7 @@ interface Question {
   id: string;
   question: string;
   choice: { id: string; text: string }[];
+  level: string;
 }
 
 interface TestResult {
@@ -231,12 +232,28 @@ export default function TestPage() {
   }, [currentQuestionIndex, selectedAnswers, saveProgress]);
 
   const handleSubmit = async (forcedSubmit = false) => {
-    if (
-      testType === "SIMULATION" &&
-      Object.keys(selectedAnswers).length !== 200
-    ) {
-      toast.error("Please answer all questions");
-      return;
+    if (testType === "SIMULATION") {
+      const answeredCount = Object.keys(selectedAnswers).length;
+      console.log("Selected Answers:", selectedAnswers);
+      console.log("Answered Count:", answeredCount);
+      console.log("Questions Length:", questions.length);
+      console.log("Answered Questions Set:", answeredQuestions);
+
+      // Check if all questions are answered
+      const allAnswered = questions.every((question) => {
+        const answers = selectedAnswers[question.id];
+        return answers !== undefined && answers.length > 0;
+      });
+      
+      if (!allAnswered) {
+        const unansweredQuestions = questions.filter((question) => {
+          const answers = selectedAnswers[question.id];
+          return answers === undefined || answers.length === 0;
+        });
+        console.log("Unanswered Questions:", unansweredQuestions.map(q => q.id));
+        toast.error(`Please answer all 200 questions. You've answered ${answeredCount} so far. Unanswered: ${unansweredQuestions.length}`);
+        return;
+      }
     }
 
     if (!forcedSubmit) {
@@ -376,6 +393,7 @@ export default function TestPage() {
             id: q.title, // Using title as id for simulation questions
             question: q.title,
             choice: q.choice,
+            level: q.level,
           }))
         );
         //set isTimed
@@ -589,12 +607,8 @@ export default function TestPage() {
           return newAnswered;
         });
 
-        // Remove from skippedQuestions if it was previously skipped
-        setSkippedQuestions((prevSkipped) => {
-          const newSkipped = new Set(prevSkipped);
-          newSkipped.delete(currentQuestionIndex);
-          return newSkipped;
-        });
+        console.log("Updated Selected Answers:", newState);
+        console.log("Answered Questions Count:", Object.keys(newState).length);
 
         return newState;
       });
@@ -840,6 +854,9 @@ export default function TestPage() {
           <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 lg:p-6 mb-8 max-h-[650px] overflow-y-auto">
             <h2 className="text-xl lg:text-2xl font-semibold mb-4">
               Question {currentQuestionIndex + 1} of {questions.length}
+            </h2>
+            <h2 className="text-xl lg:text-2xl font-semibold mb-4">
+              Level : {currentQuestion.level}
             </h2>
             <div className="mb-6 p-4 bg-white dark:bg-gray-600 rounded-lg shadow-inner">
               <p className="text-base lg:text-lg text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
