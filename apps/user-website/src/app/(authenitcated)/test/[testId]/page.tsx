@@ -231,13 +231,13 @@ export default function TestPage() {
   }, [currentQuestionIndex, selectedAnswers, saveProgress]);
 
   const handleSubmit = async (forcedSubmit = false) => {
-    // if (
-    //   testType === "SIMULATION" &&
-    //   Object.keys(selectedAnswers).length !== 200
-    // ) {
-    //   toast.error("Please answer all questions");
-    //   return;
-    // }
+    if (
+      testType === "SIMULATION" &&
+      Object.keys(selectedAnswers).length !== 200
+    ) {
+      toast.error("Please answer all questions");
+      return;
+    }
 
     if (!forcedSubmit) {
       setShowConfirmDialog(true);
