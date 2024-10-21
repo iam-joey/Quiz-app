@@ -29,6 +29,7 @@ interface TestResult {
   accuracy: number;
   userAnswers: string[][];
   question: Question[];
+  percentage: number;
 }
 
 interface SimulationTestResult {
@@ -58,6 +59,7 @@ interface SimulationTestResult {
   totalTimeTaken: number;
   accuracy: number;
   createdAt: string;
+  percentage: number;
 }
 
 export interface TestResultsProps {
@@ -114,6 +116,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
             incorrectAnswers,
             totalTimeTaken,
             accuracy,
+            percentage,
           } = data.data;
           console.log("question", question);
 
@@ -125,6 +128,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
             accuracy,
             userAnswers,
             question,
+            percentage,
           });
 
           console.log("testResult", testResult);
@@ -233,7 +237,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
               <>
                 <p>Total Questions: {testResult.question.length}</p>
                 <p>Correct Answers: {testResult.correctAnswers}</p>
-                <p>Score: {testResult.score.toFixed(2)}%</p>
+                <p>Percentage: {testResult.percentage}%</p>
                 <div className="mt-6">
                   {testResult.question.map((question, index) => (
                     <div
@@ -291,6 +295,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                   {simulationTestResult.singleQuestion.length +
                     simulationTestResult.multipleQuestion.length}
                 </p>
+                <p>Percentage: {simulationTestResult.percentage} %</p>
                 <p>Correct Answers: {simulationTestResult.correctAnswers}</p>
                 {/* <p>Score: {simulationTestResult.score.toFixed(2)}%</p>
                 <p>Accuracy: {simulationTestResult.accuracy.toFixed(2)}%</p>

@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import { authOptions } from "@/src/lib/auth";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTime } from "@/src/lib/utils";
 
 type NormalTest = {
   category: {
@@ -19,17 +20,16 @@ type NormalTest = {
   isCompleted: boolean;
   numberOfQuestions: number;
   testType: "TIMER" | "NOTIMER";
+  createdAt: string;
 };
 
 type SimulationTest = {
-  category: {
-    name: string;
-  };
   correctAnswers: number;
   id: string;
   isCompleted: boolean;
   numberOfQuestions: number;
   testType: "SIMULATION";
+  createdAt: string;
 };
 
 interface UserTestData {
@@ -40,6 +40,7 @@ interface UserTestData {
 export default function TestList() {
   const [test, setTest] = useState<UserTestData>();
   const router = useRouter();
+  const [grade, setGrade] = useState<number | null>(null);
   //@ts-ignore
   const session = useSession(authOptions);
 
@@ -54,7 +55,7 @@ export default function TestList() {
     }
     router.push(`/test/${testId}?testType=${testType}`);
   };
-
+  console.log("test", test);
   const fetchData = async () => {
     const loadingId = toast.loading("Loading info");
     try {
@@ -68,6 +69,7 @@ export default function TestList() {
         return;
       }
       const result = await response.json();
+      console.log("result", result);
       if (result.err) {
         toast.dismiss(loadingId);
         toast.error(`${result.msg}`);
@@ -82,11 +84,32 @@ export default function TestList() {
       toast.error("An error occurred while fetching data");
     }
   };
+  const fetchStats = async () => {
+    const loadingId = toast.loading("Loading info");
+    try {
+      const response = await fetch(
+        `/api/stats/${(session.data?.user as any)?.id}`
+      );
+      const data = await response.json();
+      console.log("data", data);
+      toast.dismiss(loadingId);
+      if (data.error) {
+        toast.error(data.msg);
+        return;
+      }
+      toast.success(data.msg);
+      setGrade(data.data.grade);
+    } catch (error) {
+      toast.dismiss(loadingId);
+      toast.error("An error occurred while fetching data");
+    }
+  };
 
   useEffect(() => {
     //@ts-ignore
     if (session.data?.user?.id) {
       fetchData();
+      fetchStats();
     }
     //@ts-ignore
   }, [session.data?.user?.id]);
@@ -96,6 +119,19 @@ export default function TestList() {
       {test?.UserTestDetail && test.UserTestDetail.length > 0 ? (
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-4">Normal Tests</h2>
+          {grade && (
+            <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                  Average Grade
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Your average grade is{" "}
+                  <span className="font-semibold">{grade}</span>
+                </p>
+              </div>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {test.UserTestDetail.map((test) => (
               <Card
@@ -108,7 +144,7 @@ export default function TestList() {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-medium text-gray-800 dark:text-gray-200">
-                      {test.category.name}
+                      {test.category?.name}
                     </h3>
                     <Badge
                       //@ts-ignore
@@ -131,6 +167,7 @@ export default function TestList() {
                       </span>
                     </p>
                   </div>
+                  <div>{formatDateTime(test.createdAt)}</div>
                   <div className="flex justify-end">
                     <Button variant="ghost" size="sm" className="text-xs">
                       View Details
@@ -162,14 +199,13 @@ export default function TestList() {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-medium text-gray-800 dark:text-gray-200">
-                      {test.category.name}
+                      {"Simulation Test"}
                     </h3>
                     <Badge
                       //@ts-ignore
                       variant={test.isCompleted ? "success" : "destructive"}
                       className="text-xs"
                     >
-                    
                       {test.isCompleted ? (
                         <CheckCircle className="w-3 h-3 mr-1" />
                       ) : (
@@ -186,6 +222,7 @@ export default function TestList() {
                       </span>
                     </p>
                   </div>
+                  <div>{formatDateTime(test.createdAt)}</div>
                   <div className="flex justify-end">
                     <Button variant="ghost" size="sm" className="text-xs">
                       View Details

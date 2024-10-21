@@ -50,6 +50,7 @@ export const GET = async (
           totalTimeTaken: true,
           accuracy: true,
           createdAt: true,
+          percentage: true,
         },
       });
       console.log("testData from api", testData);
@@ -72,6 +73,7 @@ export const GET = async (
             incorrectAnswers: undefined,
             totalTimeTaken: undefined,
             accuracy: undefined,
+            percentage: undefined,
           };
 
       return NextResponse.json({
@@ -121,6 +123,7 @@ export const GET = async (
           totalTimeTaken: true,
           accuracy: true,
           createdAt: true,
+          percentage: true,
         },
       });
 
@@ -154,6 +157,7 @@ export const GET = async (
             incorrectAnswers: undefined,
             totalTimeTaken: undefined,
             accuracy: undefined,
+            percentage: undefined,
           };
 
       return NextResponse.json({
@@ -163,6 +167,7 @@ export const GET = async (
       });
     }
   } catch (error) {
+    console.error("Error fetching test details:", error);
     return NextResponse.json({
       msg: "Something went wrong while fetching",
       err: true,
@@ -236,36 +241,32 @@ export const POST = async (req: NextRequest) => {
       if (isCorrect) correctAnswers++;
     });
 
-    // Calculate score and accuracy
-    const score = (correctAnswers / questions.length) * 100;
-    const accuracy = (correctAnswers / answers.length) * 100;
+    // Calculate metrics and round them
+    const roundedScore = Math.round((correctAnswers / questions.length) * 100);
+    const roundedAccuracy = Math.round((correctAnswers / answers.length) * 100);
+    const percentage = Math.round((correctAnswers / questions.length) * 100);
 
-    // Update the test record with the results
+    // Create update data without percentage first
+    const baseUpdateData = {
+      userAnswers: answers,
+      isCompleted: true,
+      score: roundedScore,
+      correctAnswers,
+      incorrectAnswers: questions.length - correctAnswers,
+      accuracy: roundedAccuracy,
+      totalTimeTaken: 0,
+      percentage,
+    };
+
     if (testType === "SIMULATION") {
       await prisma.simulationTestDetail.update({
         where: { id: testid },
-        data: {
-          userAnswers: answers,
-          isCompleted: true,
-          score,
-          correctAnswers,
-          incorrectAnswers: questions.length - correctAnswers,
-          accuracy,
-          totalTimeTaken: 0,
-        },
+        data: baseUpdateData,
       });
     } else {
       await prisma.userTestDetail.update({
         where: { id: testid },
-        data: {
-          userAnswers: answers,
-          isCompleted: true,
-          score,
-          correctAnswers,
-          incorrectAnswers: questions.length - correctAnswers,
-          accuracy,
-          totalTimeTaken: 0,
-        },
+        data: baseUpdateData,
       });
     }
 
@@ -273,10 +274,8 @@ export const POST = async (req: NextRequest) => {
       msg: "Test results updated successfully",
       err: false,
       data: {
-        score,
-        correctAnswers,
-        incorrectAnswers: questions.length - correctAnswers,
-        accuracy,
+        ...baseUpdateData,
+        percentage,
       },
     });
   } catch (error) {

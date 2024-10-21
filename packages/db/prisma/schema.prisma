@@ -101,12 +101,12 @@ model UserTestDetail {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   testType           TestType
-
-   score              Float?    // Percentage score
+  score              Float?    // Percentage score
   correctAnswers     Int?      // Number of correct answers
   incorrectAnswers   Int?      // Number of incorrect answers
   totalTimeTaken     Int?      // Total time taken (in seconds)
   accuracy           Float?    // Accuracy rate
+  percentage         Int       @default(0) // Percentage score
 
   category Category @relation(fields: [categoryId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
@@ -127,11 +127,12 @@ model SimulationTestDetail{
     numberOfQuestions  Int
     testType           TestType @default(SIMULATION)
     categoryId         String?
-   score              Float?    // Percentage score
+    score              Float?    // Percentage score
     correctAnswers     Int?      // Number of correct answers
     incorrectAnswers   Int?      // Number of incorrect answers
     totalTimeTaken     Int?      // Total time taken (in seconds)
     accuracy           Float?    // Accuracy rate
+    percentage         Int       @default(0) // Percentage score
 
     createdAt         DateTime  @default(now())
     updatedAt         DateTime  @updatedAt

@@ -35,6 +35,7 @@ export const GET = async (
             id: true,
             numberOfQuestions: true,
             testType: true,
+            createdAt: true,
           },
         },
         SimulationTestDetail: {
@@ -54,6 +55,7 @@ export const GET = async (
             id: true,
             numberOfQuestions: true,
             testType: true,
+            createdAt: true,
           },
         },
       },
