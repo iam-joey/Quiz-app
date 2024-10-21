@@ -7,6 +7,7 @@ interface Choice {
 }
 
 interface Question {
+  level: any;
   title: string;
   choice: Choice[];
 }

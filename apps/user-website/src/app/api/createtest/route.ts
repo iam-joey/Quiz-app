@@ -130,7 +130,7 @@ export const POST = async (req: NextRequest) => {
       responseData = {
         id: simulationTestDetail.id,
         singleQuestion: simulationTestDetail.singleQuestion.map(
-          ({ id, title, choice, level }) => ({
+          ({ id , title, choice, level }) => ({
             questionId: id,
             title,
             level, // Add level in the response

@@ -11,6 +11,7 @@ type Question = {
   id: string;
   question: string;
   choice: Choice[];
+  level: string;
 };
 
 type TestData = {

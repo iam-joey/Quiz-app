@@ -231,13 +231,29 @@ export default function TestPage() {
   }, [currentQuestionIndex, selectedAnswers, saveProgress]);
 
   const handleSubmit = async (forcedSubmit = false) => {
-    // if (
-    //   testType === "SIMULATION" &&
-    //   Object.keys(selectedAnswers).length !== 200
-    // ) {
-    //   toast.error("Please answer all questions");
-    //   return;
-    // }
+    if (testType === "SIMULATION") {
+      const answeredCount = Object.keys(selectedAnswers).length;
+      console.log("Selected Answers:", selectedAnswers);
+      console.log("Answered Count:", answeredCount);
+      console.log("Questions Length:", questions.length);
+      console.log("Answered Questions Set:", answeredQuestions);
+
+      // Check if all questions are answered
+      const allAnswered = questions.every((question) => {
+        const answers = selectedAnswers[question.id];
+        return answers !== undefined && answers.length > 0;
+      });
+      
+      if (!allAnswered) {
+        const unansweredQuestions = questions.filter((question) => {
+          const answers = selectedAnswers[question.id];
+          return answers === undefined || answers.length === 0;
+        });
+        console.log("Unanswered Questions:", unansweredQuestions.map(q => q.id));
+        toast.error(`Please answer all 200 questions. You've answered ${answeredCount} so far. Unanswered: ${unansweredQuestions.length}`);
+        return;
+      }
+    }
 
     if (!forcedSubmit) {
       setShowConfirmDialog(true);
@@ -589,12 +605,8 @@ export default function TestPage() {
           return newAnswered;
         });
 
-        // Remove from skippedQuestions if it was previously skipped
-        setSkippedQuestions((prevSkipped) => {
-          const newSkipped = new Set(prevSkipped);
-          newSkipped.delete(currentQuestionIndex);
-          return newSkipped;
-        });
+        console.log("Updated Selected Answers:", newState);
+        console.log("Answered Questions Count:", Object.keys(newState).length);
 
         return newState;
       });
