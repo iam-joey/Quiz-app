@@ -55,10 +55,16 @@ export default function Home() {
 
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("/api/categorys");
-        console.log(response);
-        if (response.data.err === false) {
-          setCategories(response.data.data);
+        const response = await fetch("/api/categorys", {
+          method: "GET",
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        });
+        const data = await response.json();
+        console.log("response", response);
+        if (data.err === false) {
+          setCategories(data.data);
         } else {
           setError("Failed to fetch categories");
         }
