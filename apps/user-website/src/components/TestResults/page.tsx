@@ -19,6 +19,7 @@ interface Question {
   question: string;
   choice: { id: string; text: string }[];
   answer: string[];
+  level?: string; // Add this line
 }
 
 interface TestResult {
@@ -42,6 +43,7 @@ interface SimulationTestResult {
       text: string;
     }>;
     answer: string[];
+    level?: string; // Add this line
   }>;
   multipleQuestion: Array<{
     id: string;
@@ -51,6 +53,7 @@ interface SimulationTestResult {
       text: string;
     }>;
     answer: string[];
+    level?: string; // Add this line
   }>;
   userAnswers: string[][];
   score: number;
@@ -246,6 +249,11 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                     >
                       <h3 className="text-xl font-semibold mb-2">
                         Question {index + 1}
+                        {question.level && (
+                          <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
+                            (Level: {question.level})
+                          </span>
+                        )}
                       </h3>
                       <p className="mb-2">{question.question}</p>
                       <Tooltip>
@@ -304,110 +312,110 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                   seconds
                 </p> */}
                 <div className="mt-6">
-                  {simulationTestResult.singleQuestion.map(
-                    (question, index) => (
-                      <div
-                        key={`${question.id}`}
-                        className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
-                      >
-                        {/* <h1>{question.id.toString()}</h1> */}
-                        <h3 className="text-xl font-semibold mb-2">
-                          Question {index + 1} (Single)
-                        </h3>
-                        <p className="mb-2">{question.title}</p>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <FlagIcon
-                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                              onClick={() => handleFlagClick(`${question.id}`)}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
-                            <p>Report to admin</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <div className="space-y-2">
-                          {question.choice.map((choice) => (
-                            <div
-                              key={choice.id}
-                              className={`p-2 rounded ${
-                                question.answer.includes(choice.id)
-                                  ? "bg-green-200 dark:bg-green-700"
-                                  : simulationTestResult.userAnswers[
-                                        index
-                                      ]?.includes(choice.id)
-                                    ? "bg-red-200 dark:bg-red-700"
-                                    : "bg-white dark:bg-gray-700"
-                              }`}
-                            >
-                              {choice.text}
-                              {question.answer.includes(choice.id) && " ✓"}
-                              {simulationTestResult.userAnswers[
+                  {simulationTestResult.singleQuestion.map((question, index) => (
+                    <div
+                      key={`${question.id}`}
+                      className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
+                    >
+                      <h3 className="text-xl font-semibold mb-2">
+                        Question {index + 1} (Single)
+                        {question.level && (
+                          <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
+                            (Level: {question.level})
+                          </span>
+                        )}
+                      </h3>
+                      <p className="mb-2">{question.title}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <FlagIcon
+                            className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                            onClick={() => handleFlagClick(`${question.id}`)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                          <p>Report to admin</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <div className="space-y-2">
+                        {question.choice.map((choice) => (
+                          <div
+                            key={choice.id}
+                            className={`p-2 rounded ${
+                              question.answer.includes(choice.id)
+                                ? "bg-green-200 dark:bg-green-700"
+                                : simulationTestResult.userAnswers[
+                                      index
+                                    ]?.includes(choice.id)
+                                  ? "bg-red-200 dark:bg-red-700"
+                                  : "bg-white dark:bg-gray-700"
+                            }`}
+                          >
+                            {choice.text}
+                            {question.answer.includes(choice.id) && " ✓"}
+                            {simulationTestResult.userAnswers[
+                              index
+                            ]?.includes(choice.id) &&
+                              !question.answer.includes(choice.id) &&
+                              " ✗"}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {simulationTestResult.multipleQuestion.map((question, index) => (
+                    <div
+                      key={`${question.id}`}
+                      className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
+                    >
+                      <h3 className="text-xl font-semibold mb-2">
+                        Question {simulationTestResult.singleQuestion.length + index + 1} (Multiple)
+                        {question.level && (
+                          <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
+                            (Level: {question.level})
+                          </span>
+                        )}
+                      </h3>
+                      <p className="mb-2">{question.title}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <FlagIcon
+                            className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                            onClick={() => handleFlagClick(`${question.id}`)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                          <p>Report to admin</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <div className="space-y-2">
+                        {question.choice.map((choice) => (
+                          <div
+                            key={choice.id}
+                            className={`p-2 rounded ${
+                              question.answer.includes(choice.id)
+                                ? "bg-green-200 dark:bg-green-700"
+                                : simulationTestResult.userAnswers[
+                                      simulationTestResult.singleQuestion
+                                        .length + index
+                                    ]?.includes(choice.id)
+                                  ? "bg-red-200 dark:bg-red-700"
+                                  : "bg-white dark:bg-gray-700"
+                            }`}
+                          >
+                            {choice.text}
+                            {question.answer.includes(choice.id) && " ✓"}
+                            {simulationTestResult.userAnswers[
+                              simulationTestResult.singleQuestion.length +
                                 index
-                              ]?.includes(choice.id) &&
-                                !question.answer.includes(choice.id) &&
-                                " ✗"}
-                            </div>
-                          ))}
-                        </div>
+                            ]?.includes(choice.id) &&
+                              !question.answer.includes(choice.id) &&
+                              " ✗"}
+                          </div>
+                        ))}
                       </div>
-                    )
-                  )}
-                  {simulationTestResult.multipleQuestion.map(
-                    (question, index) => (
-                      <div
-                        key={`${question.id}`}
-                        className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
-                      >
-                        {/* <h1>{question.id}</h1> */}
-                        <h3 className="text-xl font-semibold mb-2">
-                          Question{" "}
-                          {simulationTestResult.singleQuestion.length +
-                            index +
-                            1}{" "}
-                          (Multiple)
-                        </h3>
-                        <p className="mb-2">{question.title}</p>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <FlagIcon
-                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                              onClick={() => handleFlagClick(`${question.id}`)}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
-                            <p>Report to admin</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <div className="space-y-2">
-                          {question.choice.map((choice) => (
-                            <div
-                              key={choice.id}
-                              className={`p-2 rounded ${
-                                question.answer.includes(choice.id)
-                                  ? "bg-green-200 dark:bg-green-700"
-                                  : simulationTestResult.userAnswers[
-                                        simulationTestResult.singleQuestion
-                                          .length + index
-                                      ]?.includes(choice.id)
-                                    ? "bg-red-200 dark:bg-red-700"
-                                    : "bg-white dark:bg-gray-700"
-                              }`}
-                            >
-                              {choice.text}
-                              {question.answer.includes(choice.id) && " ✓"}
-                              {simulationTestResult.userAnswers[
-                                simulationTestResult.singleQuestion.length +
-                                  index
-                              ]?.includes(choice.id) &&
-                                !question.answer.includes(choice.id) &&
-                                " ✗"}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  )}
+                    </div>
+                  ))}
                 </div>
               </>
             )}
