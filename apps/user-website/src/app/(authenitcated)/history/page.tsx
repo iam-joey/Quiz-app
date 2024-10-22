@@ -53,7 +53,7 @@ export default function TestList() {
       router.push(`/test/${testId}/results?testType=${testType}`);
       return;
     }
-    router.push(`/test/${testId}?testType=${testType}`);
+    router.push(`/test/${testId}?type=${testType}`);
   };
   console.log("test", test);
   const fetchData = async () => {
