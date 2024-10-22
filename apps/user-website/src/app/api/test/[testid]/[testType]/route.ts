@@ -1,6 +1,8 @@
 import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
 
+// export const dynamic = "force-dynamic"
+
 export const GET = async (
   req: NextRequest,
   {
@@ -53,7 +55,6 @@ export const GET = async (
           percentage: true,
         },
       });
-      console.log("testData from api", testData);
       if (!testData) {
         return NextResponse.json({
           msg: "Invalid test id",
@@ -82,6 +83,7 @@ export const GET = async (
         data: responseData,
       });
     } else {
+      console.log("inside simulation test");
       const testDetail = await prisma.simulationTestDetail.findUnique({
         where: {
           id: params.testid,
@@ -126,7 +128,6 @@ export const GET = async (
           percentage: true,
         },
       });
-
       if (!testDetail) {
         return NextResponse.json({
           msg: "Invalid testId",

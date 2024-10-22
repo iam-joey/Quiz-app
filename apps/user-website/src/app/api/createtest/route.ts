@@ -19,8 +19,116 @@ export const POST = async (req: NextRequest) => {
     let selectedQuestions;
     let responseData;
 
+    const calculateQuestionDistribution = (totalQuestions: any) => {
+      const easyQuestions = Math.ceil(totalQuestions * 0.4);
+      const mediumQuestions = Math.ceil(totalQuestions * 0.4);
+      const hardQuestions = totalQuestions - (easyQuestions + mediumQuestions);
+      return { easyQuestions, mediumQuestions, hardQuestions };
+    };
+
+    const fetchQuestions = async (categoryId: any, numberOfQuestions: any) => {
+      if (!numberOfQuestions) {
+        const allQuestions = await prisma.question.findMany({
+          where: {
+            categoryId,
+            category: {
+              deleted: false,
+            },
+          },
+          select: {
+            id: true,
+            question: true,
+            choice: {
+              select: {
+                id: true,
+                text: true,
+              },
+            },
+            level: true,
+          },
+        });
+
+        return allQuestions.sort(() => 0.5 - Math.random());
+      } else {
+        const { easyQuestions, mediumQuestions, hardQuestions } =
+          calculateQuestionDistribution(numberOfQuestions);
+
+        const easy = await prisma.question.findMany({
+          where: {
+            categoryId,
+            level: "EASY",
+            category: {
+              deleted: false,
+            },
+          },
+          take: easyQuestions,
+          select: {
+            id: true,
+            question: true,
+            choice: {
+              select: {
+                id: true,
+                text: true,
+              },
+            },
+            level: true,
+          },
+        });
+
+        const medium = await prisma.question.findMany({
+          where: {
+            categoryId,
+            level: "MEDIUM",
+            category: {
+              deleted: false,
+            },
+          },
+          take: mediumQuestions,
+          select: {
+            id: true,
+            question: true,
+            choice: {
+              select: {
+                id: true,
+                text: true,
+              },
+            },
+            level: true,
+          },
+        });
+
+        const hard = await prisma.question.findMany({
+          where: {
+            categoryId,
+            level: "HARD",
+            category: {
+              deleted: false,
+            },
+          },
+          take: hardQuestions,
+          select: {
+            id: true,
+            question: true,
+            choice: {
+              select: {
+                id: true,
+                text: true,
+              },
+            },
+            level: true,
+          },
+        });
+
+        const selectedQuestions = [...easy, ...medium, ...hard];
+
+        // Shuffle questions to randomize the order
+        return selectedQuestions.sort(() => 0.5 - Math.random());
+      }
+    };
+
     if (testDetails.testType === "SIMULATION") {
       console.log("Creating SIMULATION test");
+      // Fetch questions for simulation (assuming simulation does not follow 40%-40%-20% logic)
       const singleAnswerQuestions = await prisma.question.findMany({
         where: {
           isMultipleAnswer: false,
@@ -156,26 +264,11 @@ export const POST = async (req: NextRequest) => {
         data: responseData,
       });
     } else {
-      selectedQuestions = await prisma.question.findMany({
-        where: {
-          category: {
-            deleted: false,
-          },
-          categoryId: testDetails.categoryId,
-        },
-        take: testDetails.numberOfQuestions,
-        select: {
-          id: true,
-          question: true,
-          choice: {
-            select: {
-              id: true,
-              text: true,
-            },
-          },
-          level: true, // Include level for response
-        },
-      });
+      // Fetch selected questions (either all or according to 40%-40%-20% logic)
+      selectedQuestions = await fetchQuestions(
+        testDetails.categoryId,
+        testDetails.numberOfQuestions
+      );
 
       const userTestDetail = await prisma.userTestDetail.create({
         data: {
@@ -215,7 +308,7 @@ export const POST = async (req: NextRequest) => {
         id: userTestDetail.id,
         question: userTestDetail.question.map(({ choice, level, ...rest }) => ({
           ...rest,
-          level, // Add level in the response
+          level,
           choice: choice.map(({ id, text }) => ({ id, text })),
         })),
         testType: userTestDetail.testType,

@@ -49,6 +49,7 @@ export default function TestList() {
     isCompleted: boolean,
     testType: string
   ) => {
+    console.log("testype", testType);
     if (isCompleted) {
       router.push(`/test/${testId}/results?testType=${testType}`);
       return;
