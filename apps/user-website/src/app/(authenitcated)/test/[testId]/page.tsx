@@ -232,6 +232,17 @@ export default function TestPage() {
   }, [currentQuestionIndex, selectedAnswers, saveProgress]);
 
   const handleSubmit = async (forcedSubmit = false) => {
+    if (forcedSubmit) {
+      setShowConfirmDialog(false);
+      // Make test completed
+      if (testData) {
+        testData.isCompleted = true;
+      }
+      if (simulationTestData) {
+        simulationTestData.isCompleted = true;
+      }
+    }
+
     if (testType === "SIMULATION") {
       const answeredCount = Object.keys(selectedAnswers).length;
       console.log("Selected Answers:", selectedAnswers);
@@ -245,7 +256,7 @@ export default function TestPage() {
         return answers !== undefined && answers.length > 0;
       });
       
-      if (!allAnswered) {
+      if (!allAnswered && !forcedSubmit) {
         const unansweredQuestions = questions.filter((question) => {
           const answers = selectedAnswers[question.id];
           return answers === undefined || answers.length === 0;
@@ -306,15 +317,23 @@ export default function TestPage() {
       console.log(data);
       if (data.err) {
         console.error(data.msg);
+        toast.error("Failed to submit test. Please try again.");
       } else {
         console.log("Test submitted successfully:", data.data);
         setTestResult(data.data);
-        setShowDialog(true);
         // Clear all test-related data from local storage
         clearTestLocalStorage();
+        
+        // If it's a forced submit (time's up), redirect to results page immediately
+        if (forcedSubmit) {
+          router.push(`/test/${testId}/results?testType=${type}`);
+        } else {
+          setShowDialog(true);
+        }
       }
     } catch (error) {
       console.error("Failed to submit test:", error);
+      toast.error("An error occurred while submitting the test. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -334,9 +353,10 @@ export default function TestPage() {
   useEffect(() => {
     const fetchQuestions = async () => {
       if (questions.length > 0) {
-        console.log("i'm returning");
+        console.log("Questions already loaded, returning");
         return;
       }
+
       // Check if we have data in the context
       if (
         testData &&
@@ -382,6 +402,7 @@ export default function TestPage() {
         (simulationTestData.singleQuestion ||
           simulationTestData.multipleQuestion)
       ) {
+        console.log("simulationTestData in fetchQuestions", simulationTestData);
         setTestType(simulationTestData.testType);
         // Handle simulation test data
         const allQuestions = [
@@ -426,11 +447,38 @@ export default function TestPage() {
       if (cachedSimulationData) {
         const parsedData = JSON.parse(cachedSimulationData);
         console.log("Using simulationTestData from localStorage", parsedData);
-        setSimulationTestData(parsedData);
-        // ... handle simulation test data (similar to the context handling above)
-        // ... set questions, isTimed, remainingTime, etc.
-        return;
-      } else if (cachedData) {
+        
+        if (parsedData.singleQuestion || parsedData.multipleQuestion) {
+          setSimulationTestData(parsedData);
+          const allQuestions = [
+            ...(parsedData.singleQuestion || []),
+            ...(parsedData.multipleQuestion || []),
+          ];
+          const formattedQuestions = allQuestions.map((q) => ({
+            id: q.title,
+            question: q.title,
+            choice: q.choice,
+            level: q.level,
+          }));
+          setQuestions(formattedQuestions);
+          setIsTimed(true);
+          setDuration(parsedData.duration || 0);
+          const createdAt = new Date(parsedData.createdAt || Date.now()).getTime();
+          const currentTime = Date.now();
+          const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
+          const remainingSeconds = Math.max(
+            (parsedData.duration || 0) - elapsedSeconds,
+            0
+          );
+          setRemainingTime(remainingSeconds);
+          setIsLoading(false);
+          setTestId(parsedData.id || "");
+          setTestType(parsedData.testType || "SIMULATION");
+          return;
+        }
+      }
+
+      if (cachedData) {
         const parsedData = JSON.parse(cachedData);
         console.log("Using testData from localStorage", parsedData);
         setTestData(parsedData);
@@ -479,14 +527,48 @@ export default function TestPage() {
             `simulationTestData_${testId}`,
             JSON.stringify(data)
           );
-          // ... handle simulation test data
+          const allQuestions = [
+            ...(data.data.singleQuestion || []),
+            ...(data.data.multipleQuestion || []),
+          ];
+          setQuestions(allQuestions); 
+          setIsTimed(true);
+          setDuration(data.data.duration);
+          const createdAt = new Date(data.data.createdAt || Date.now()).getTime();
+          const currentTime = Date.now();
+          const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
+          const remainingSeconds = Math.max(
+            (data.data.duration || 0) - elapsedSeconds,
+            0
+          );
+          setRemainingTime(remainingSeconds);
+          setTestId(data.data.id || "");
+          setTestType(data.data.testType || "SIMULATION");
+          setIsLoading(false);
+          return;
         } else {
           setTestData(data);
           localStorage.setItem(`testData_${testId}`, JSON.stringify(data));
-          // ... handle regular test data
+          setQuestions(data.data.question);
+          setIsTimed(data.data.testType === "TIMER");
+          if (isTimed) {
+            const createdAt = new Date(data.data.createdAt).getTime();
+            const currentTime = Date.now();
+            const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
+            const remainingSeconds = Math.max(
+              data.data.duration - elapsedSeconds,
+              0
+            );
+            setRemainingTime(remainingSeconds);
+          }
+          setDuration(data.data.duration);
+          setTestId(data.data.id);
+          if (remainingTime === null) {
+            setRemainingTime(data.data.duration);
+          }
+          setIsLoading(false);
+          return;
         }
-
-        // ... set common states like isLoading, testId, etc.
       } catch (error) {
         console.error("Failed to fetch questions:", error);
         setIsLoading(false);
@@ -520,20 +602,9 @@ export default function TestPage() {
         setAnsweredQuestions(new Set(JSON.parse(savedAnswered)));
       }
     };
-    if (questions.length === 0) {
-      fetchQuestions();
-    }
-  }, [
-    testData,
-    setTestData,
-    simulationTestData,
-    setSimulationTestData,
-    params.testId,
-    searchParams,
-    router,
-    isTimed,
-    remainingTime,
-  ]);
+
+    fetchQuestions();
+  }, [questions.length, params.testId]); // Add questions.length to dependencies
 
   useEffect(() => {
     if (isTimed && remainingTime !== null) {
