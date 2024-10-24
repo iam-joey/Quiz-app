@@ -449,3 +449,67 @@ export async function editTopicName(id: string, newName: string) {
     };
   }
 }
+
+export async function addTopicDoc(name: string) {
+  try {
+    const findTopic = await prisma.topic.findUnique({
+      where: {
+        name,
+      },
+    });
+    console.log("inside");
+    if (findTopic) {
+      return {
+        err: true,
+        msg: "Topic already present in db",
+        data: null,
+      };
+    }
+
+    const data = await prisma.topic.create({
+      data: {
+        name,
+      },
+    });
+
+    console.log("Topic created successfully!", data);
+    revalidatePath("/docs");
+    return {
+      err: false,
+      msg: "Topic created",
+      data,
+    };
+  } catch (error) {
+    console.log("Error creating topic:", error);
+    return {
+      err: true,
+      msg: "Something went wrong while creating the topic",
+      data: null,
+    };
+  }
+}
+
+export async function getTopicDocs() {
+  try {
+    const data = await prisma.topic.findMany({
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return {
+      err: false,
+      msg: "All good",
+      data,
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      err: true,
+      msg: "Something went wrong while fetching topics",
+      data: null,
+    };
+  }
+}

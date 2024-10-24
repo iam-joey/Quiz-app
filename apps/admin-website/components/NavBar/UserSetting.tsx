@@ -65,6 +65,14 @@ export function UserSetting() {
             >
               deletedcategorys
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                router.push("/docs");
+              }}
+            >
+              Docs
+            </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
