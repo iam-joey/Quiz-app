@@ -76,7 +76,7 @@ export default function DocxUploader({
         }),
       });
 
-      setUploadProgress(75); // API call completed (75%)
+      setUploadProgress(75);
 
       const data = await response.json();
 

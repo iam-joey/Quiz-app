@@ -14,7 +14,6 @@ export const GET = async (
   }
 ) => {
   try {
-    // Fetch user data with the percentages of their test results
     const data = await prisma.user.findUnique({
       where: {
         id: params.userId,

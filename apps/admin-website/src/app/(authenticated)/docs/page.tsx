@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -56,6 +57,8 @@ type Topic = {
 export default function TopicManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -77,11 +80,11 @@ export default function TopicManager() {
   }, []);
 
   async function handleAddTopic(formData: FormData) {
-    setIsLoading(true);
+    setIsAdding(true);
     const name = formData.get("topic") as string;
     if (!name || name.trim() === "") {
       toast.error("Topic name is required");
-      setIsLoading(false);
+      setIsAdding(false);
       return;
     }
 
@@ -98,16 +101,16 @@ export default function TopicManager() {
     } catch (error) {
       toast.error("An unexpected error occurred");
     } finally {
-      setIsLoading(false);
+      setIsAdding(false);
     }
   }
 
   async function handleEditTopic(formData: FormData) {
-    setIsLoading(true);
+    setIsEditing(true);
     const newName = formData.get("topic") as string;
     if (!newName || newName.trim() === "" || !editingTopic) {
       toast.error("Topic name is required");
-      setIsLoading(false);
+      setIsEditing(false);
       return;
     }
 
@@ -130,7 +133,7 @@ export default function TopicManager() {
     } catch (error) {
       toast.error("An unexpected error occurred");
     } finally {
-      setIsLoading(false);
+      setIsEditing(false);
     }
   }
 
@@ -205,14 +208,14 @@ export default function TopicManager() {
                     placeholder="Enter topic name"
                     className="flex-grow"
                     defaultValue={editingTopic ? editingTopic.name : ""}
-                    disabled={isLoading}
+                    disabled={isAdding || isEditing}
                   />
                   <Button
                     type="submit"
                     className="bg-green-500 hover:bg-green-600 text-white"
-                    disabled={isLoading}
+                    disabled={isAdding || isEditing}
                   >
-                    {isLoading ? (
+                    {isAdding || isEditing ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : editingTopic ? (
                       "Save"
@@ -255,7 +258,7 @@ export default function TopicManager() {
                   <Button
                     variant="ghost"
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    disabled={isDeleting === topic.id}
+                    disabled={isDeleting === topic.id || isEditing}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -266,14 +269,14 @@ export default function TopicManager() {
                       setEditingTopic(topic);
                       setIsDialogOpen(true);
                     }}
-                    disabled={isDeleting === topic.id}
+                    disabled={isDeleting === topic.id || isEditing}
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDeleteTopic(topic.id)}
-                    disabled={isDeleting === topic.id}
+                    disabled={isDeleting === topic.id || isEditing}
                   >
                     {isDeleting === topic.id ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -288,7 +291,6 @@ export default function TopicManager() {
           ))}
         </div>
       )}
-      <Toaster />
     </div>
   );
 }
