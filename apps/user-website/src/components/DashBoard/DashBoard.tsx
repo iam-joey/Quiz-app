@@ -39,6 +39,9 @@ export default function Home() {
   const { setSimulationTestData } = useSimulationTestContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [maxQuestionCount, setMaxQuestionCount] = useState<number | null>(null);
+  const [showLearningTopicsDialog, setShowLearningTopicsDialog] = useState(false);
+  const [topics, setTopics] = useState<Array<{ id: string; name: string; document: { totalPages: number } }>>([]);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
   useEffect(() => {
     setTestData(null);
@@ -176,6 +179,63 @@ export default function Home() {
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const fetchTopics = async () => {
+    try {
+      const response = await fetch("/api/learningtopic");
+      const data = await response.json();
+      console.log("data", data);
+      if (!data.err) {
+        setTopics(data.data);
+      } else {
+        toast.error("Failed to fetch topics");
+      }
+    } catch (error) {
+      console.error("Error fetching topics:", error);
+      toast.error("An error occurred while fetching topics");
+    }
+  };
+
+  useEffect(() => {
+    if (showLearningTopicsDialog) {
+      fetchTopics();
+    }
+  }, [showLearningTopicsDialog]);
+
+  const filteredTopics = topics.filter((topic) =>
+    topic.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const startStudy = async () => {
+    if (!selectedTopic) return;
+
+    const userId = (session.data?.user as any)?.id; // Assuming user ID is available in session
+
+    if (!userId) {
+      toast.error("User not logged in");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/createuserlearning/${userId}/${selectedTopic}`, {
+        method: "POST",
+      });
+
+      const result = await response.json();
+      console.log("result", result);
+
+      router.push(`/learningTopic/${selectedTopic}`);
+      if (result.error) {
+        toast.error(result.message);
+      } else {
+        toast.success(result.message);
+        router.push(`/learningTopic/${selectedTopic}`);
+      }
+    } catch (error) {
+      console.error("Error starting study:", error);
+      toast.error("An error occurred while starting study");
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white p-4">
@@ -326,6 +386,35 @@ export default function Home() {
                 className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
                 History
+              </button>
+            </div>
+
+            <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <div className="flex items-center mb-4">
+                <svg
+                  className="w-6 h-6 text-purple-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                <h2 className="text-xl font-semibold">Learning Topics</h2>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Explore various learning topics
+              </p>
+              <button
+                onClick={() => setShowLearningTopicsDialog(true)}
+                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                Start
               </button>
             </div>
           </div>
@@ -955,6 +1044,85 @@ export default function Home() {
               ) : (
                 "Start Test"
               )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showLearningTopicsDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full relative">
+            <button
+              onClick={() => setShowLearningTopicsDialog(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <h2 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">
+              Learning Topics
+            </h2>
+            <input
+              type="text"
+              placeholder="Search topics..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
+            />
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {filteredTopics.map((topic) => (
+                <button
+                  key={topic.id}
+                  onClick={() => setSelectedTopic(topic.id)}
+                  className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                    selectedTopic === topic.id
+                      ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                      : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                  }`}
+                >
+                  <span>{topic.name} ({topic.document.totalPages} pages)</span>
+                  {selectedTopic === topic.id && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={startStudy}
+              className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out ${
+                selectedTopic
+                  ? "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                  : "bg-blue-200 text-blue-400 dark:bg-blue-300 dark:text-blue-500 cursor-not-allowed"
+              }`}
+              disabled={!selectedTopic}
+            >
+              Start Study
             </button>
           </div>
         </div>
