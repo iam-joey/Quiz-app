@@ -519,9 +519,6 @@ export async function getTopicDoc(topicId: string) {
       where: {
         id: topicId,
       },
-      include: {
-        document: true,
-      },
     });
 
     if (!data) {
@@ -535,9 +532,7 @@ export async function getTopicDoc(topicId: string) {
     return {
       err: false,
       msg: "All good",
-      data: {
-        document: data.document ? true : (false as boolean),
-      },
+      data,
     };
   } catch (error) {
     console.log(error);
@@ -554,9 +549,6 @@ export async function deleteTopicDoc(topicId: string) {
       where: {
         id: topicId,
       },
-      include: {
-        document: true,
-      },
     });
 
     if (!findTopic) {
@@ -564,22 +556,6 @@ export async function deleteTopicDoc(topicId: string) {
         err: true,
         msg: "Topic not found",
       };
-    }
-
-    if (findTopic.document) {
-      await prisma.userDocumentProgress.deleteMany({
-        where: {
-          document: {
-            topicId: topicId,
-          },
-        },
-      });
-
-      await prisma.document.deleteMany({
-        where: {
-          topicId: topicId,
-        },
-      });
     }
 
     await prisma.topic.delete({

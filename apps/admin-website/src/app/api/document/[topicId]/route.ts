@@ -57,20 +57,26 @@ export async function GET(
     }
 
     // Step 1: Query the database to get the document details
-    const document = await prisma.document.findUnique({
-      where: { topicId },
+    const topic = await prisma.topic.findUnique({
+      where: { id: topicId },
     });
 
-    if (!document) {
+    if (!topic) {
       return NextResponse.json(
         { error: true, message: "No document found for the given topicId" },
         { status: 404 }
       );
     }
 
-    const s3Key = `${topicId}-document.pdf`;
+    if (topic.docfileName === null) {
+      return NextResponse.json(
+        { error: true, message: "No pdf found for the given topicId" },
+        { status: 404 }
+      );
+    }
 
-    // Step 2: Get the PDF from S3
+    const s3Key = topic.docfileName;
+
     let pdfBuffer;
     try {
       pdfBuffer = await getDocumentFromS3(s3Key);
@@ -84,7 +90,7 @@ export async function GET(
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${document.fileName}.pdf"`,
+        "Content-Disposition": `inline; filename="${topic.docfileName}.pdf"`,
       },
     });
   } catch (error) {

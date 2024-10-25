@@ -27,7 +27,7 @@ export default function DocxUploader({
   useEffect(() => {
     const checkExistingDocument = async () => {
       const result = await getTopicDoc(params.topicId);
-      if (!result.err && result.data && result.data.document) {
+      if (!result.err && result.data && result.data.docfileName) {
         router.push(`/docs/view/${params.topicId}`);
       } else {
         setCheckingDocument(false);

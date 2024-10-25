@@ -64,19 +64,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const existingDocument = await prisma.document.findUnique({
-      where: { topicId },
-    });
-
-    if (existingDocument) {
-      return NextResponse.json({
-        error: true,
-        message: "A document has already been uploaded for this topic.",
-      });
-    }
-
-    const sanitizedName = sanitizeFileName(existingTopic.name);
-
     let buffer;
     try {
       buffer = Buffer.from(file, "base64");
@@ -87,7 +74,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 1: Convert DOCX to PDF
     let pdfBuffer;
     try {
       pdfBuffer = await convertDocxToPdf(buffer);
@@ -99,7 +85,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 2: Extract Page Count from the PDF
     let pageCount;
     try {
       pageCount = await getPageCountFromPdf(pdfBuffer);
@@ -111,19 +96,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 3: Upload the PDF to S3
     const s3Key = `${topicId}-document.pdf`;
-    const fileType = "application/pdf";
-    await uploadDocumentToS3(s3Key, pdfBuffer, fileType);
 
-    // Step 4: Save document info in the database
-    await prisma.document.create({
+    await prisma.topic.update({
+      where: { id: topicId },
       data: {
-        fileName: sanitizedName,
-        totalPages: pageCount,
-        topicId,
+        docfileName: s3Key,
+        pages: pageCount,
       },
     });
+    const fileType = "application/pdf";
+    await uploadDocumentToS3(s3Key, pdfBuffer, fileType);
 
     return NextResponse.json({
       error: false,

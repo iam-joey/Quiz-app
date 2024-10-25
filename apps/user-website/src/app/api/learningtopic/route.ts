@@ -6,12 +6,9 @@ export const GET = async (req: NextRequest) => {
   try {
     const data = await prisma.topic.findMany({
       where: {
-        document: {
-          isNot: null,
+        docfileName: {
+          not: null,
         },
-      },
-      include: {
-        document: true,
       },
     });
 

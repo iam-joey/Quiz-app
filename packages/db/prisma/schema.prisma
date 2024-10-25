@@ -28,7 +28,7 @@ model User {
   @@index([id])
   SimulationTestDetail SimulationTestDetail[]
   Flag Flag[]
-  UserDocumentProgress UserDocumentProgress[]
+  UserLearningHistory UserLearningHistory[]
 }
 
 model Admin {
@@ -179,43 +179,39 @@ enum TestType{
 model Topic {
   id          String     @id @default(uuid())
   name        String     @unique
-  document    Document?  // Reference to the document (no page relations needed)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt @default(now())
-  
-  UserDocumentProgress UserDocumentProgress[]
-}
-
-model Document {
-  id          String     @id @default(uuid())
-  topicId     String     @unique
-  fileName    String     
-  totalPages  Int        
-  topic       Topic      @relation(fields: [topicId], references: [id])  
+  pages       Int       @default(0)
+  docfileName String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt @default(now())
 
-  UserDocumentProgress UserDocumentProgress[]
+  UserLearningTopicIdsDetails UserLearningTopicIdsDetails[]
 }
 
-model UserDocumentProgress {
-  id              String   @id @default(uuid()) @unique
-  userId          String
-  topicId         String   
-  documentId      String
-  currentPage     Int      @default(0)              
-  totalPages      Int                    
-  completedAt     DateTime?              
-  user            User     @relation(fields: [userId], references: [id])
-  document        Document @relation(fields: [documentId], references: [id])
-  topic           Topic    @relation(fields: [topicId], references: [id])  
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt @default(now())
+model UserLearningHistory {
+  id          String                       @id @default(uuid())
+  userId      String
+  userTopics  UserLearningTopicIdsDetails[]
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt @default(now())
 
-  @@unique([userId, documentId])         
+  user        User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([id])
   @@index([userId])
-  @@index([documentId])
-  @@index([topicId])
+  @@unique([userId])
+}
+
+model UserLearningTopicIdsDetails {
+  id                    String               @id @default(uuid())
+  userId                String
+  topicId               String
+  currentPage           Int                  @default(0)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt @default(now())
+  
+  learningHistories     UserLearningHistory[]
+  topic                 Topic                @relation(fields: [topicId], references: [id])
+  @@index([id,topicId,userId])
+  @@unique([topicId,userId])
 }
 
 

@@ -40,47 +40,70 @@ export async function GET(
   {
     params,
   }: {
-    params: { topicId: string };
+    params: { progressId: string };
   }
 ) {
   try {
-    const { searchParams } = new URL(request.url);
-    const topicId = params.topicId;
-
-    if (!topicId) {
+    const progressId = params.progressId;
+    if (!progressId) {
       return NextResponse.json(
         { error: true, message: "Missing topicId parameter" },
         { status: 400 }
       );
     }
-
-    const document = await prisma.document.findUnique({
-      where: { topicId },
+    const userLearningHistory = await prisma.userLearningHistory.findUnique({
+      where: {
+        id: progressId,
+      },
+      select: {
+        id: true,
+        userTopics: {
+          select: {
+            topic: {
+              select: {
+                id: true,
+                name: true,
+                docfileName: true,
+              },
+            },
+            currentPage: true,
+          },
+        },
+      },
     });
-
-    if (!document) {
+    if (!userLearningHistory) {
       return NextResponse.json(
-        { error: true, message: "No document found for the given topicId" },
+        { error: true, msg: "User learning history not found" },
         { status: 404 }
       );
     }
-
-    const s3Key = `${topicId}-document.pdf`;
-
-    let pdfBuffer;
-    try {
-      pdfBuffer = await getDocumentFromS3(s3Key);
-    } catch (error) {
-      return NextResponse.json(
-        { error: true, message: "Failed to retrieve document" },
-        { status: 500 }
-      );
-    }
-
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${document.fileName}.pdf"`,
+    const pdfs = await Promise.all(
+      userLearningHistory.userTopics.map(async (userTopic) => {
+        const docfileName = userTopic.topic.docfileName;
+        if (docfileName) {
+          try {
+            const pdfBuffer = await getDocumentFromS3(docfileName);
+            return {
+              topicId: userTopic.topic.id,
+              pdf: pdfBuffer.toString("base64"),
+            };
+          } catch (error) {
+            console.error(
+              `Failed to retrieve PDF for topic ${userTopic.topic.id}:`,
+              error
+            );
+            return { topicId: userTopic.topic.id, pdf: null };
+          }
+        }
+        return { topicId: userTopic.topic.id, pdf: null };
+      })
+    );
+    return NextResponse.json({
+      error: true,
+      message: "User document progress already exists",
+      data: {
+        ...userLearningHistory,
+        pdfs,
       },
     });
   } catch (error) {
