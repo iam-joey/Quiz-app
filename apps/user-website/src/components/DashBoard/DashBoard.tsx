@@ -252,12 +252,9 @@ export default function Home() {
             Tests
           </button>
           <button
-            onClick={
-              () => toast.info("Coming soon")
-              //setActiveTab("Flashcards")
-            }
+            onClick={() => setActiveTab("Learnings")}
             className={`flex-1 py-2 text-center ${
-              activeTab === "Flashcards"
+              activeTab === "Learnings"
                 ? "bg-blue-600 text-white"
                 : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
             }`}
@@ -388,7 +385,11 @@ export default function Home() {
                 History
               </button>
             </div>
+          </div>
+        )}
 
+        {activeTab === "Learnings" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
                 <svg
@@ -415,6 +416,35 @@ export default function Home() {
                 className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
                 Start
+              </button>
+            </div>
+
+            <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <div className="flex items-center mb-4">
+                <svg
+                  className="w-6 h-6 text-yellow-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <h2 className="text-xl font-semibold">Learning History</h2>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                View your learning progress
+              </p>
+              <button
+                onClick={() => router.push("/learninghistory")}
+                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                View History
               </button>
             </div>
           </div>
