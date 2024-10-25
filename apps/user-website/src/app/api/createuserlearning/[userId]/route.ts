@@ -34,6 +34,9 @@ async function getDocumentFromS3(s3Key: string): Promise<Buffer> {
   }
 }
 
+// POST /api/createuserlearning/[userId]
+// Request body: { topics: string[] } (topic ids array)
+
 export const POST = async (
   req: NextRequest,
   {
@@ -46,7 +49,7 @@ export const POST = async (
     const userId = params.userId;
 
     const {
-      topics,
+      topics, //send topic ids array
     }: {
       topics: string[];
     } = await req.json();
@@ -81,7 +84,7 @@ export const POST = async (
       where: {
         userId: userId,
         userTopics: {
-          some: {
+          every: {
             topicId: {
               in: topics,
             },
