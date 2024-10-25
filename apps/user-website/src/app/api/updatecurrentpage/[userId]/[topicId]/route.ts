@@ -68,7 +68,6 @@ export const POST = async (
       },
       data: {
         currentPage: currentPage,
-        completedAt: currentPage >= document.totalPages ? new Date() : null,
       },
     });
 

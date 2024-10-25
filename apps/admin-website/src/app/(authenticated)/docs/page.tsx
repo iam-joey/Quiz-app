@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,8 +11,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PlusIcon, CalendarIcon, ClockIcon, SearchIcon } from "lucide-react";
-import { addTopicDoc, getTopicDocs } from "@/src/lib/actions";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  PlusIcon,
+  CalendarIcon,
+  ClockIcon,
+  SearchIcon,
+  MoreVertical,
+  Edit,
+  Trash,
+  Loader2,
+} from "lucide-react";
+import {
+  addTopicDoc,
+  getTopicDocs,
+  deleteTopicDoc,
+  editTopicDocName,
+} from "@/src/lib/actions";
 import { toast, Toaster } from "sonner";
 
 function formatDate(date: Date): string {
@@ -37,18 +56,22 @@ type Topic = {
 export default function TopicManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     async function fetchTopics() {
+      setIsLoading(true);
       const result = await getTopicDocs();
       if (!result.err && result.data) {
         setTopics(result.data);
       } else {
         toast.error(result.msg);
       }
+      setIsLoading(false);
     }
     fetchTopics();
   }, []);
@@ -79,6 +102,57 @@ export default function TopicManager() {
     }
   }
 
+  async function handleEditTopic(formData: FormData) {
+    setIsLoading(true);
+    const newName = formData.get("topic") as string;
+    if (!newName || newName.trim() === "" || !editingTopic) {
+      toast.error("Topic name is required");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const result = await editTopicDocName(editingTopic.id, newName.trim());
+      if (result.err) {
+        toast.error(result.msg);
+      } else {
+        toast.success(result.msg);
+        setTopics((prevTopics) =>
+          prevTopics.map((topic) =>
+            topic.id === editingTopic.id
+              ? { ...topic, name: newName.trim() }
+              : topic
+          )
+        );
+        setEditingTopic(null);
+        setIsDialogOpen(false);
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleDeleteTopic(topicId: string) {
+    setIsDeleting(topicId);
+    try {
+      const result = await deleteTopicDoc(topicId);
+      if (result.err) {
+        toast.error(result.msg);
+      } else {
+        toast.success(result.msg);
+        setTopics((prevTopics) =>
+          prevTopics.filter((topic) => topic.id !== topicId)
+        );
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsDeleting(null);
+    }
+  }
+
   const filteredTopics = topics.filter((topic) =>
     topic.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -88,7 +162,7 @@ export default function TopicManager() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Topic Manager</h1>
         <div className="flex items-center space-x-4">
-          <div className="relative  ">
+          <div className="relative">
             <Input
               type="text"
               placeholder="Search topics..."
@@ -103,29 +177,48 @@ export default function TopicManager() {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                <PlusIcon className="mr-2 h-4 w-4" /> Add Topic
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                )}
+                Add Topic
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-semibold text-gray-700">
-                  Add New Topic
+                  {editingTopic ? "Edit Topic" : "Add New Topic"}
                 </DialogTitle>
               </DialogHeader>
-              <form action={handleAddTopic} className="mt-4">
+              <form
+                action={editingTopic ? handleEditTopic : handleAddTopic}
+                className="mt-4"
+              >
                 <div className="flex items-center space-x-2">
                   <Input
                     name="topic"
                     placeholder="Enter topic name"
                     className="flex-grow"
+                    defaultValue={editingTopic ? editingTopic.name : ""}
+                    disabled={isLoading}
                   />
                   <Button
                     type="submit"
                     className="bg-green-500 hover:bg-green-600 text-white"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Adding..." : "Add"}
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : editingTopic ? (
+                      "Save"
+                    ) : (
+                      "Add"
+                    )}
                   </Button>
                 </div>
               </form>
@@ -134,25 +227,67 @@ export default function TopicManager() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredTopics.map((topic) => (
-          <Link href={`/docs/${topic.id}`} key={topic.id} className="group">
-            <div className="border border-gray-200 rounded-lg p-6 hover:shadow-xl transition-all duration-300 bg-white group-hover:bg-blue-50">
-              <h3 className="font-bold text-xl mb-3 text-gray-800 group-hover:text-blue-600">
-                {topic.name}
-              </h3>
-              <div className="flex items-center text-sm text-gray-600 mb-2">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                <p>Created: {formatDate(new Date(topic.createdAt))}</p>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <ClockIcon className="mr-2 h-4 w-4" />
-                <p>Updated: {formatDate(new Date(topic.updatedAt))}</p>
-              </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredTopics.map((topic) => (
+            <div key={topic.id} className="group relative">
+              <Link href={`/docs/${topic.id}`}>
+                <div className="border border-gray-200 rounded-lg p-6 hover:shadow-xl transition-all duration-300 bg-white group-hover:bg-blue-50">
+                  <h3 className="font-bold text-xl mb-3 text-gray-800 group-hover:text-blue-600">
+                    {topic.name}
+                  </h3>
+                  <div className="flex items-center text-sm text-gray-600 mb-2">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <p>Created: {formatDate(new Date(topic.createdAt))}</p>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <ClockIcon className="mr-2 h-4 w-4" />
+                    <p>Updated: {formatDate(new Date(topic.updatedAt))}</p>
+                  </div>
+                </div>
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={isDeleting === topic.id}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setEditingTopic(topic);
+                      setIsDialogOpen(true);
+                    }}
+                    disabled={isDeleting === topic.id}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDeleteTopic(topic.id)}
+                    disabled={isDeleting === topic.id}
+                  >
+                    {isDeleting === topic.id ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="mr-2 h-4 w-4" />
+                    )}
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </Link>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       <Toaster />
     </div>
   );

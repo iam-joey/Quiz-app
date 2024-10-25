@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Upload } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { getTopicDoc } from "@/src/lib/actions";
 
 export default function DocxUploader({
   params,
@@ -19,6 +21,21 @@ export default function DocxUploader({
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [checkingDocument, setCheckingDocument] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkExistingDocument = async () => {
+      const result = await getTopicDoc(params.topicId);
+      if (!result.err && result.data && result.data.document) {
+        router.push(`/docs/view/${params.topicId}`);
+      } else {
+        setCheckingDocument(false);
+      }
+    };
+
+    checkExistingDocument();
+  }, [params.topicId, router]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -68,6 +85,7 @@ export default function DocxUploader({
       } else {
         toast.success(data.message);
         setFile(null);
+        router.push(`/docs/view/${params.topicId}`);
       }
     } catch (error) {
       toast.error("An error occurred while uploading the file");
@@ -105,6 +123,17 @@ export default function DocxUploader({
       };
     });
   };
+
+  if (checkingDocument) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardContent className="flex items-center justify-center p-6">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-2">Checking for existing document...</span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">

@@ -78,7 +78,7 @@ export const POST = async (
       );
     }
 
-    await prisma.userDocumentProgress.create({
+    const userlearning = await prisma.userDocumentProgress.create({
       data: {
         userId: userId,
         topicId: topicId,
@@ -91,6 +91,7 @@ export const POST = async (
     return NextResponse.json({
       error: false,
       message: "User document progress created successfully",
+      userlearning,
     });
   } catch (error) {
     console.error("Error creating user document progress:", error);

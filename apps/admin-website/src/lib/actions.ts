@@ -513,3 +513,139 @@ export async function getTopicDocs() {
     };
   }
 }
+export async function getTopicDoc(topicId: string) {
+  try {
+    const data = await prisma.topic.findUnique({
+      where: {
+        id: topicId,
+      },
+      include: {
+        document: true,
+      },
+    });
+
+    if (!data) {
+      return {
+        err: true,
+        msg: "Topic not found",
+        data: null,
+      };
+    }
+
+    return {
+      err: false,
+      msg: "All good",
+      data: {
+        document: data.document ? true : (false as boolean),
+      },
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      err: true,
+      msg: "Something went wrong while fetching topics",
+    };
+  }
+}
+
+export async function deleteTopicDoc(topicId: string) {
+  try {
+    const findTopic = await prisma.topic.findUnique({
+      where: {
+        id: topicId,
+      },
+      include: {
+        document: true,
+      },
+    });
+
+    if (!findTopic) {
+      return {
+        err: true,
+        msg: "Topic not found",
+      };
+    }
+
+    if (findTopic.document) {
+      await prisma.userDocumentProgress.deleteMany({
+        where: {
+          document: {
+            topicId: topicId,
+          },
+        },
+      });
+
+      await prisma.document.deleteMany({
+        where: {
+          topicId: topicId,
+        },
+      });
+    }
+
+    await prisma.topic.delete({
+      where: {
+        id: topicId,
+      },
+    });
+
+    return {
+      err: false,
+      msg: "Topic and attached documents deleted",
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      err: true,
+      msg: "Something went wrong while deleting topic and documents",
+    };
+  }
+}
+
+export async function editTopicDocName(topicId: string, newName: string) {
+  try {
+    const findTopic = await prisma.topic.findUnique({
+      where: {
+        id: topicId,
+      },
+    });
+
+    if (!findTopic) {
+      return {
+        err: true,
+        msg: "Topic not found",
+      };
+    }
+
+    const findName = await prisma.topic.findUnique({
+      where: {
+        name: newName,
+      },
+    });
+
+    if (findName) {
+      return {
+        err: true,
+        msg: "Name already present",
+      };
+    }
+
+    await prisma.topic.update({
+      where: {
+        id: topicId,
+      },
+      data: {
+        name: newName,
+      },
+    });
+    return {
+      err: false,
+      msg: "Topic name updated",
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      err: true,
+      msg: "Something went wrong while updating topic name",
+    };
+  }
+}
