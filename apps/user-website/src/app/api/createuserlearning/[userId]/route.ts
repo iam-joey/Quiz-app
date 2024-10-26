@@ -47,12 +47,15 @@ export const POST = async (
 ) => {
   try {
     const userId = params.userId;
+    console.log("userId", userId);
 
     const {
       topics, //send topic ids array
     }: {
       topics: string[];
     } = await req.json();
+
+    console.log("topics", topics);
 
     const user = await prisma.user.findUnique({
       where: {
@@ -109,6 +112,8 @@ export const POST = async (
     });
 
     if (alreadyPresent) {
+      console.log("alreadyPresent", alreadyPresent);
+      console.log("userTopics", alreadyPresent.userTopics);
       const pdfs = await Promise.all(
         alreadyPresent.userTopics.map(async (userTopic) => {
           const docfileName = userTopic.topic.docfileName;
@@ -210,10 +215,16 @@ export const POST = async (
     });
   } catch (error) {
     console.error("Error creating user document progress:", error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return NextResponse.json(
       {
         error: true,
         message: "An error occurred while creating user document progress",
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
