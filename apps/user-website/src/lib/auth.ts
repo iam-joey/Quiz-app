@@ -11,13 +11,13 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     GoogleProvider({
-      clientId:
-        "548624448516-j66otmb4bk9c5vdl51urtrt0eg294er1.apps.googleusercontent.com",
-      clientSecret: "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",
-      // this is for the main website
       // clientId:
-      //   "548624448516-9aphfvepsbtjk610eqb2tngok81kfkc9.apps.googleusercontent.com",
-      // clientSecret: "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",
+      //   "548624448516-j66otmb4bk9c5vdl51urtrt0eg294er1.apps.googleusercontent.com",
+      // clientSecret: "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",
+      // this is for the main website
+      clientId:
+        "548624448516-9aphfvepsbtjk610eqb2tngok81kfkc9.apps.googleusercontent.com",
+      clientSecret: "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",
       authorization: {
         params: {
           prompt: "consent",
