@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
-import { FlagIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { FlagIcon, ArrowLeftIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useSession } from "next-auth/react";
 import { authOptions } from "@/src/lib/auth";
 import Link from "next/link";
@@ -83,6 +83,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   //@ts-ignore
   const session = useSession(authOptions);
+  const [expandedExplanations, setExpandedExplanations] = useState<{ [key: string]: boolean }>({});
   console.log("simulation test result", simulationTestResult);
   useEffect(() => {
     const fetchTestData = async () => {
@@ -207,6 +208,13 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
     }
   };
 
+  const toggleExplanation = (questionId: string) => {
+    setExpandedExplanations(prev => ({
+      ...prev,
+      [questionId]: !prev[questionId]
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -291,6 +299,24 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           </div>
                         ))}
                       </div>
+                      <div className="mt-4">
+                        <button
+                          onClick={() => toggleExplanation(question.id)}
+                          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                        >
+                          <span className="font-semibold mr-2">Explanation</span>
+                          <ChevronDownIcon
+                            className={`h-5 w-5 transform transition-transform ${
+                              expandedExplanations[question.id] ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                        {expandedExplanations[question.id] && (
+                          <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
+                            <p>No explanation provided.</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -361,6 +387,24 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           </div>
                         ))}
                       </div>
+                      <div className="mt-4">
+                        <button
+                          onClick={() => toggleExplanation(question.id)}
+                          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                        >
+                          <span className="font-semibold mr-2">Explanation</span>
+                          <ChevronDownIcon
+                            className={`h-5 w-5 transform transition-transform ${
+                              expandedExplanations[question.id] ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                        {expandedExplanations[question.id] && (
+                          <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
+                            <p>No explanation provided.</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                   {simulationTestResult.multipleQuestion.map((question, index) => (
@@ -413,6 +457,24 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                               " ✗"}
                           </div>
                         ))}
+                      </div>
+                      <div className="mt-4">
+                        <button
+                          onClick={() => toggleExplanation(question.id)}
+                          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                        >
+                          <span className="font-semibold mr-2">Explanation</span>
+                          <ChevronDownIcon
+                            className={`h-5 w-5 transform transition-transform ${
+                              expandedExplanations[question.id] ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                        {expandedExplanations[question.id] && (
+                          <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
+                            <p>No explanation provided.</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

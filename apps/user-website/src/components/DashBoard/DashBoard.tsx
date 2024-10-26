@@ -42,6 +42,10 @@ export default function Home() {
   const [showLearningTopicsDialog, setShowLearningTopicsDialog] = useState(false);
   const [topics, setTopics] = useState<Array<{ id: string; name: string; pages: number }>>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [showContinueDialog, setShowContinueDialog] = useState(false);
+  const [existingProgressId, setExistingProgressId] = useState<string | null>(null);
+  const [isResettingStudy, setIsResettingStudy] = useState(false);
+  const [isStartingStudy, setIsStartingStudy] = useState(false);
 
   useEffect(() => {
     setTestData(null);
@@ -232,6 +236,8 @@ export default function Home() {
       return;
     }
 
+    setIsStartingStudy(true);
+
     try {
       console.log("selectedTopics", selectedTopics);
       console.log("userId", userId);
@@ -244,19 +250,77 @@ export default function Home() {
       });
 
       const result = await response.json();
-      router.push(`/learningTopic/${result.data.id}`);
       console.log("result", result);
 
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success(`Started study for ${selectedTopics.length} topic(s)`);
+      if (result.data.new) {
         router.push(`/learningTopic/${result.data.id}`);
+        toast.success(`Started study for ${selectedTopics.length} topic(s)`);
+      } else {
+        setExistingProgressId(result.data.id);
+        setShowContinueDialog(true);
       }
     } catch (error) {
       console.error("Error starting study:", error);
       toast.error("An error occurred while starting study");
+    } finally {
+      setIsStartingStudy(false);
     }
+  };
+
+  const continueExistingStudy = () => {
+    if (existingProgressId) {
+      router.push(`/learningTopic/${existingProgressId}`);
+      toast.success(`Continued study for ${selectedTopics.length} topic(s)`);
+    }
+    setShowContinueDialog(false);
+  };
+
+  const startNewStudy = async () => {
+    if (!existingProgressId) return;
+
+    const userId = (session.data?.user as any)?.id;
+    if (!userId) {
+      toast.error("User not logged in");
+      return;
+    }
+
+    setIsResettingStudy(true);
+
+    try {
+      // Fetch the current learning history to get all topic IDs
+      const response = await fetch(`/api/learningtopic/${userId}/${existingProgressId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch learning history');
+      }
+      const data = await response.json();
+
+      // Reset each topic's current page to 1
+      const resetPromises = data.data.userTopics.map(async (userTopic: any) => {
+        const resetResponse = await fetch(`/api/updatecurrentpage/${userId}/${existingProgressId}/${userTopic.topic.id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ page: 1 }),
+        });
+
+        if (!resetResponse.ok) {
+          throw new Error(`Failed to reset progress for topic ${userTopic.topic.id}`);
+        }
+      });
+
+      // Wait for all reset operations to complete
+      await Promise.all(resetPromises);
+
+      router.push(`/learningTopic/${existingProgressId}`);
+      toast.success(`Started new study for ${selectedTopics.length} topic(s)`);
+    } catch (error) {
+      console.error('Error resetting study progress:', error);
+      toast.error("An error occurred while resetting study progress");
+      setIsResettingStudy(false);
+    }
+
+    setShowContinueDialog(false);
   };
 
   return (
@@ -345,37 +409,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <svg
-                  className="w-6 h-6 text-purple-500 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                <h2 className="text-xl font-semibold">Create tests</h2>
-              </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Design your own assessments
-              </p>
-              <button
-                onClick={() => {
-                  toast.info("Coming soon");
-                }}
-                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                Create
-              </button>
-            </div> */}
-
             <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
                 <svg
@@ -400,18 +433,13 @@ export default function Home() {
               <button
                 onClick={() => {
                   router.push("/history");
-                  // toast.info("need little fix");
                 }}
                 className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
                 History
               </button>
             </div>
-          </div>
-        )}
 
-        {activeTab === "Learnings" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
                 <svg
@@ -440,7 +468,11 @@ export default function Home() {
                 Start
               </button>
             </div>
+          </div>
+        )}
 
+        {activeTab === "Learnings" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
                 <svg
@@ -1193,15 +1225,64 @@ export default function Home() {
             </div>
             <button
               onClick={startStudy}
-              className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out ${
-                selectedTopics.length > 0
+              className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out flex items-center justify-center ${
+                selectedTopics.length > 0 && !isStartingStudy
                   ? "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                   : "bg-blue-200 text-blue-400 dark:bg-blue-300 dark:text-blue-500 cursor-not-allowed"
               }`}
-              disabled={selectedTopics.length === 0}
+              disabled={selectedTopics.length === 0 || isStartingStudy}
             >
-              Start Study ({selectedTopics.length} selected)
+              {isStartingStudy ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Starting Study...
+                </>
+              ) : (
+                `Start Study (${selectedTopics.length} selected)`
+              )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {showContinueDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full relative">
+            <h2 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">
+              Existing Study Session Found
+            </h2>
+            <p className="mb-6 text-center text-gray-600 dark:text-gray-300">
+              Do you want to continue the existing study or start from the beginning?
+            </p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={continueExistingStudy}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                disabled={isResettingStudy}
+              >
+                Continue
+              </button>
+              <button
+                onClick={startNewStudy}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors flex items-center"
+                disabled={isResettingStudy}
+              >
+                {isResettingStudy ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Resetting...
+                  </>
+                ) : (
+                  'Start from Beginning'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

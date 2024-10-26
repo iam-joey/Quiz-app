@@ -33,6 +33,15 @@ export default function LearningTopic() {
   }, [session.data?.user]);
 
   useEffect(() => {
+    if (topics.length > 0 && !selectedTopic) {
+      const defaultTopic = topics[0];
+      setSelectedTopic(defaultTopic);
+      setPdfUrl(defaultTopic.pdfUrl);
+      setPageNumber(defaultTopic.progress.currentPage);
+    }
+  }, [topics, selectedTopic]);
+
+  useEffect(() => {
     if (selectedTopic && selectedTopic.pdfUrl) {
       renderPDF(selectedTopic.pdfUrl, pageNumber);
     }
@@ -63,7 +72,7 @@ export default function LearningTopic() {
           pdfUrl: pdfData?.pdf ? `data:application/pdf;base64,${pdfData.pdf}` : null,
           progress: {
             currentPage: userTopic.currentPage || 1,
-            totalPages: 0, // We'll set this when rendering the PDF
+            totalPages: userTopic.topic.pages || 0,
           },
         };
       });
@@ -169,6 +178,11 @@ export default function LearningTopic() {
     }
   };
 
+  const goToFirstPage = () => {
+    setPageNumber(1);
+    updateCurrentPage(1);
+  };
+
   const handleTopicClick = (topic: any) => {
     setSelectedTopic(topic);
     setPdfUrl(topic.pdfUrl);
@@ -211,6 +225,12 @@ export default function LearningTopic() {
                 onClick={goToNextPage}
               >
                 Next
+              </button>
+              <button 
+                className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded"
+                onClick={goToFirstPage}
+              >
+                Back to Start
               </button>
             </div>
           </div>
