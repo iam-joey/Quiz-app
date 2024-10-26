@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 // progressId is the id of the userLearningHistory
 // topicId is the id of the topic
 // userId is the id of the user
+// api/updatecurrentpage/[userId]/[progressId]/[topicId]
 
 export const POST = async (
   req: NextRequest,

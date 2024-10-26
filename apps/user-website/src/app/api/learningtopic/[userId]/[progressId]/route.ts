@@ -35,25 +35,48 @@ async function getDocumentFromS3(s3Key: string): Promise<Buffer> {
   }
 }
 
+//for fetching user combo topics so that you can render them in document viewer
+
+// GET /api/learningtopic/[progressId]
+
 export async function GET(
   request: NextRequest,
   {
     params,
   }: {
-    params: { progressId: string };
+    params: { userId: string; progressId: string };
   }
 ) {
   try {
     const progressId = params.progressId;
-    if (!progressId) {
+    const userId = params.userId;
+    if (!progressId || !userId) {
       return NextResponse.json(
-        { error: true, message: "Missing topicId parameter" },
+        { error: true, message: "Missing parameters" },
         { status: 400 }
       );
     }
+
+    const findUser = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!findUser) {
+      return NextResponse.json(
+        {
+          error: true,
+          msg: "User not found",
+        },
+        { status: 404 }
+      );
+    }
+
     const userLearningHistory = await prisma.userLearningHistory.findUnique({
       where: {
         id: progressId,
+        userId: userId,
       },
       select: {
         id: true,

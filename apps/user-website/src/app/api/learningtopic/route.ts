@@ -2,6 +2,8 @@ import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
+//api/learningtopic -> for fetching all topics
+
 export const GET = async (req: NextRequest) => {
   try {
     const data = await prisma.topic.findMany({

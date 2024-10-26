@@ -136,7 +136,7 @@ export const POST = async (
         message: "User document progress already exists",
         data: {
           ...alreadyPresent,
-          new: true,
+          new: false,
           pdfs,
         },
       });
