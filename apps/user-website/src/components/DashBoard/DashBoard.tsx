@@ -40,8 +40,8 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [maxQuestionCount, setMaxQuestionCount] = useState<number | null>(null);
   const [showLearningTopicsDialog, setShowLearningTopicsDialog] = useState(false);
-  const [topics, setTopics] = useState<Array<{ id: string; name: string; document: { totalPages: number } }>>([]);
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [topics, setTopics] = useState<Array<{ id: string; name: string; pages: number }>>([]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
   useEffect(() => {
     setTestData(null);
@@ -206,10 +206,26 @@ export default function Home() {
     topic.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const startStudy = async () => {
-    if (!selectedTopic) return;
+  const toggleTopic = (topicId: string) => {
+    setSelectedTopics(prev => 
+      prev.includes(topicId) 
+        ? prev.filter(id => id !== topicId)
+        : [...prev, topicId]
+    );
+  };
 
-    const userId = (session.data?.user as any)?.id; // Assuming user ID is available in session
+  const toggleAllTopics = () => {
+    if (selectedTopics.length === filteredTopics.length) {
+      setSelectedTopics([]);
+    } else {
+      setSelectedTopics(filteredTopics.map(topic => topic.id));
+    }
+  };
+
+  const startStudy = async () => {
+    if (selectedTopics.length === 0) return;
+
+    const userId = (session.data?.user as any)?.id;
 
     if (!userId) {
       toast.error("User not logged in");
@@ -217,19 +233,25 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch(`/api/createuserlearning/${userId}/${selectedTopic}`, {
+      console.log("selectedTopics", selectedTopics);
+      console.log("userId", userId);
+      const response = await fetch(`/api/createuserlearning/${userId}`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ topics: selectedTopics }),
       });
 
       const result = await response.json();
+      router.push(`/learningTopic/${result.data.id}`);
       console.log("result", result);
 
-      router.push(`/learningTopic/${selectedTopic}`);
       if (result.error) {
-        toast.error(result.message);
+        toast.error(result.error);
       } else {
-        toast.success(result.message);
-        router.push(`/learningTopic/${selectedTopic}`);
+        toast.success(`Started study for ${selectedTopics.length} topic(s)`);
+        router.push(`/learningTopic/${result.data.id}`);
       }
     } catch (error) {
       console.error("Error starting study:", error);
@@ -1113,18 +1135,44 @@ export default function Home() {
               className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
             />
             <div className="space-y-3 max-h-60 overflow-y-auto">
+              <button
+                onClick={toggleAllTopics}
+                className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                  selectedTopics.length === filteredTopics.length
+                    ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                    : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                }`}
+              >
+                <span>Select All</span>
+                {selectedTopics.length === filteredTopics.length && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
+              </button>
               {filteredTopics.map((topic) => (
                 <button
                   key={topic.id}
-                  onClick={() => setSelectedTopic(topic.id)}
+                  onClick={() => toggleTopic(topic.id)}
                   className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
-                    selectedTopic === topic.id
+                    selectedTopics.includes(topic.id)
                       ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
                       : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
                   }`}
                 >
-                  <span>{topic.name} ({topic.document.totalPages} pages)</span>
-                  {selectedTopic === topic.id && (
+                  <span>{topic.name} ({topic.pages} pages)</span>
+                  {selectedTopics.includes(topic.id) && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-6 w-6 text-blue-500 dark:text-blue-300"
@@ -1146,13 +1194,13 @@ export default function Home() {
             <button
               onClick={startStudy}
               className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out ${
-                selectedTopic
+                selectedTopics.length > 0
                   ? "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                   : "bg-blue-200 text-blue-400 dark:bg-blue-300 dark:text-blue-500 cursor-not-allowed"
               }`}
-              disabled={!selectedTopic}
+              disabled={selectedTopics.length === 0}
             >
-              Start Study
+              Start Study ({selectedTopics.length} selected)
             </button>
           </div>
         </div>

@@ -50,6 +50,8 @@ export async function GET(
   try {
     const progressId = params.progressId;
     const userId = params.userId;
+    console.log("progressId", progressId);
+    console.log("userId", userId);
     if (!progressId || !userId) {
       return NextResponse.json(
         { error: true, message: "Missing parameters" },
