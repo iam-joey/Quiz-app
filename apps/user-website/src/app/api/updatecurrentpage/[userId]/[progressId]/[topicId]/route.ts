@@ -64,6 +64,13 @@ export const POST = async (
           },
         },
       },
+      include: {
+        userTopics: {
+          where: {
+            topicId: params.topicId,
+          },
+        },
+      },
     });
 
     if (!findLearningHistory) {
@@ -75,27 +82,6 @@ export const POST = async (
         { status: 404 }
       );
     }
-
-    await prisma.userLearningHistory.update({
-      where: {
-        id: params.progressId,
-      },
-      data: {
-        userTopics: {
-          update: {
-            where: {
-              topicId_userId: {
-                topicId: params.topicId,
-                userId: params.userId,
-              },
-            },
-            data: {
-              currentPage: page,
-            },
-          },
-        },
-      },
-    });
 
     return NextResponse.json(
       {

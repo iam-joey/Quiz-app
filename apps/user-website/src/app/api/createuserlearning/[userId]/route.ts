@@ -37,6 +37,36 @@ async function getDocumentFromS3(s3Key: string): Promise<Buffer> {
 // POST /api/createuserlearning/[userId]
 // Request body: { topics: string[] } (topic ids array)
 
+type UserTopic = {
+  id: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  currentPage: number;
+  topicId: string;
+};
+
+type FindId = {
+  id: string;
+  userTopics: UserTopic[];
+};
+
+function findExactMatchingUserIds(
+  findIds: FindId[],
+  topicIds: string[]
+): string[] {
+  return findIds
+    .filter((user) => {
+      const userTopicIds = user.userTopics.map((topic) => topic.topicId);
+      // Check if userTopicIds has exactly the same topics as topicIds
+      return (
+        userTopicIds.length === topicIds.length &&
+        topicIds.every((id) => userTopicIds.includes(id))
+      );
+    })
+    .map((user) => user.id);
+}
+
 export const POST = async (
   req: NextRequest,
   {
@@ -47,16 +77,13 @@ export const POST = async (
 ) => {
   try {
     const userId = params.userId;
-    console.log("userId", userId);
 
     const {
       topics, //send topic ids array
     }: {
       topics: string[];
     } = await req.json();
-
-    console.log("topics", topics);
-
+    console.log("topics", topics.length);
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
@@ -83,39 +110,46 @@ export const POST = async (
       );
     }
 
-    const alreadyPresent = await prisma.userLearningHistory.findFirst({
+    const findIds = await prisma.userLearningHistory.findMany({
       where: {
         userId: userId,
-        userTopics: {
-          every: {
-            topicId: {
-              in: topics,
-            },
-          },
-        },
       },
       select: {
+        userTopics: true,
         id: true,
-        userTopics: {
-          select: {
-            topic: {
-              select: {
-                id: true,
-                name: true,
-                docfileName: true,
-              },
-            },
-            currentPage: true,
-          },
-        },
       },
     });
+    const matchingUserIds = findExactMatchingUserIds(findIds, topics);
 
-    if (alreadyPresent) {
+    if (matchingUserIds.length > 0) {
+      console.log("came inside", matchingUserIds);
+
+      const alreadyPresent = await prisma.userLearningHistory.findUnique({
+        where: {
+          id: matchingUserIds[0],
+        },
+        select: {
+          id: true,
+          userTopics: {
+            select: {
+              topic: {
+                select: {
+                  id: true,
+                  name: true,
+                  docfileName: true,
+                },
+              },
+              currentPage: true,
+            },
+          },
+        },
+      });
+
       console.log("alreadyPresent", alreadyPresent);
-      console.log("userTopics", alreadyPresent.userTopics);
+      console.log("userTopics", alreadyPresent!.userTopics);
+
       const pdfs = await Promise.all(
-        alreadyPresent.userTopics.map(async (userTopic) => {
+        alreadyPresent!.userTopics.map(async (userTopic) => {
           const docfileName = userTopic.topic.docfileName;
           if (docfileName) {
             try {
@@ -135,7 +169,6 @@ export const POST = async (
           return { topicId: userTopic.topic.id, pdf: null };
         })
       );
-
       return NextResponse.json({
         error: true,
         message: "User document progress already exists",

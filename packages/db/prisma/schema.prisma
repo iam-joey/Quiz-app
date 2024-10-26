@@ -197,7 +197,6 @@ model UserLearningHistory {
   user        User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([id])
   @@index([userId])
-  @@unique([userId])
 }
 
 model UserLearningTopicIdsDetails {
@@ -211,7 +210,6 @@ model UserLearningTopicIdsDetails {
   learningHistories     UserLearningHistory[]
   topic                 Topic                @relation(fields: [topicId], references: [id])
   @@index([id,topicId,userId])
-  @@unique([topicId,userId])
 }
 
 
