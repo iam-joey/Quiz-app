@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +17,9 @@ import { Edit, Save, Trash, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import "react-quill/dist/quill.snow.css";
+
 type Choice = {
   id: string;
   text: string;
@@ -27,11 +31,28 @@ type Choice = {
 type QuestionData = {
   id: string;
   question: string;
+  paragraph: string;
   title: string;
   categoryId: string;
   answer: string[];
   choice: Choice[];
 };
+
+const defaultParagraph = `
+<h1>Heading 1</h1>
+<h2>Heading 2</h2>
+<h3>Heading 3</h3>
+<p><strong>Bold text</strong>, <em>italic text</em>, and <u>underlined text</u>.</p>
+<p>Normal paragraph with <span style="font-size: 18px;">different</span> <span style="font-size: 24px;">text</span> <span style="font-size: 36px;">sizes</span>.</p>
+<ul>
+  <li>Bullet point 1</li>
+  <li>Bullet point 2</li>
+</ul>
+<ol>
+  <li>Numbered item 1</li>
+  <li>Numbered item 2</li>
+</ol>
+`;
 
 export default function QuestionEditor({
   params,
@@ -42,6 +63,7 @@ export default function QuestionEditor({
   const [questionData, setQuestionData] = useState<QuestionData>({
     id: "",
     question: "",
+    paragraph: defaultParagraph,
     title: "",
     categoryId: "",
     answer: [],
@@ -67,7 +89,10 @@ export default function QuestionEditor({
       }
       toast.dismiss(id);
       toast.info(`${data.msg}`);
-      setQuestionData(data.data);
+      setQuestionData({
+        ...data.data,
+        paragraph: data.data.paragraph || defaultParagraph,
+      });
       setIsLoading(false);
     } catch (error) {
       toast.dismiss(id);
@@ -138,6 +163,10 @@ export default function QuestionEditor({
     setQuestionData((prev) => ({ ...prev, question: e.target.value }));
   };
 
+  const handleParagraphChange = (content: string) => {
+    setQuestionData((prev) => ({ ...prev, paragraph: content }));
+  };
+
   const handleChoiceChange = (id: string, text: string) => {
     setQuestionData((prev) => ({
       ...prev,
@@ -156,25 +185,35 @@ export default function QuestionEditor({
     }));
   };
 
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ size: ["small", false, "large", "huge"] }],
+      ["clean"],
+    ],
+  };
+
   if (isLoading) return <div className="text-center">Loading...</div>;
 
   return (
-    <div className="flex justify-center items-center h-[700px] w-full">
-      <Card className="w-full max-w-2xl mx-auto">
+    <div className="flex justify-center items-center min-h-screen w-full p-4">
+      <Card className="w-full max-w-3xl mx-auto">
         <CardHeader>
-          <CardTitle>
-            {isEditing ? (
-              <Input
-                value={questionData.question}
-                onChange={handleQuestionChange}
-                className="text-2xl font-bold"
-              />
-            ) : (
-              questionData.question
-            )}
-          </CardTitle>
+          <CardTitle>Question Editor</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="question">Question:</Label>
+            <Input
+              id="question"
+              value={questionData.question}
+              onChange={handleQuestionChange}
+              className="w-full"
+              disabled={!isEditing}
+            />
+          </div>
           <ul className="space-y-2">
             {questionData.choice.map((choice) => (
               <li
@@ -216,13 +255,32 @@ export default function QuestionEditor({
               </li>
             ))}
           </ul>
+          <div className="space-y-2">
+            <Label htmlFor="paragraph">Paragraph:</Label>
+            {isEditing ? (
+              <div className="border rounded-md">
+                <ReactQuill
+                  theme="snow"
+                  value={questionData.paragraph}
+                  onChange={handleParagraphChange}
+                  modules={quillModules}
+                  className="h-64"
+                />
+              </div>
+            ) : (
+              <div
+                className="ql-editor border rounded-md p-4"
+                dangerouslySetInnerHTML={{ __html: questionData.paragraph }}
+              />
+            )}
+          </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-end space-x-2 pt-6">
           {isEditing ? (
-            <div className="flex w-full space-x-2">
+            <>
               <Button
                 onClick={handleUpdate}
-                className="flex-1 items-center justify-center"
+                className="items-center justify-center"
                 disabled={isUpdating || isDeleting}
               >
                 {isUpdating ? (
@@ -235,7 +293,7 @@ export default function QuestionEditor({
               <Button
                 onClick={handleDelete}
                 variant="destructive"
-                className="flex-1 items-center justify-center"
+                className="items-center justify-center"
                 disabled={isUpdating || isDeleting}
               >
                 {isDeleting ? (
@@ -245,11 +303,11 @@ export default function QuestionEditor({
                 )}
                 {isDeleting ? "Deleting..." : "Delete"}
               </Button>
-            </div>
+            </>
           ) : (
             <Button
               onClick={handleEdit}
-              className="w-full items-center justify-center"
+              className="items-center justify-center"
             >
               <Edit className="mr-2 h-4 w-4" />
               Edit

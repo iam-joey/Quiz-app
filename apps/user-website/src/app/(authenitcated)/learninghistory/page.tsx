@@ -5,27 +5,29 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle } from "lucide-react";
-import { formatDateTime } from "@/src/lib/utils";
+import { XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-type LearningHistoryItem = {
+type TopicInfo = {
   id: string;
-  currentPage: number;
-  completedAt: string | null;
-  document: {
-    id: string;
-    fileName: string;
-    totalPages: number;
-  };
-  topic: {
-    id: string;
-    name: string;
-  };
+  name: string;
+  pages: number;
 };
 
-export default function LearningHistory() {
+type UserTopic = {
+  topic: TopicInfo;
+};
+
+type LearningHistoryItem = {
+  id: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  userTopics: UserTopic[];
+};
+
+export default function Component() {
   const [history, setHistory] = useState<LearningHistoryItem[]>([]);
   const router = useRouter();
   const session = useSession();
@@ -46,6 +48,7 @@ export default function LearningHistory() {
       }
 
       const result = await response.json();
+      console.log("Learning history result:", result);
       if (result.error) {
         throw new Error(result.message);
       }
@@ -74,44 +77,45 @@ export default function LearningHistory() {
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">Learning History</h1>
       {history.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {history.map((item) => (
             <Card
               key={item.id}
               className="cursor-pointer hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden"
-              onClick={() => handleTopicClick(item.topic.id)}
+              onClick={() => handleTopicClick(item.id)}
             >
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium text-gray-800 dark:text-gray-200">
-                    {item.topic.name}
+                    Learning Session
                   </h3>
-                  <Badge
-                    variant={item.completedAt ? "success" : "default"}
-                    className="text-xs"
-                  >
-                    {item.completedAt ? (
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                    ) : (
-                      <XCircle className="w-3 h-3 mr-1" />
-                    )}
-                    {item.completedAt ? "Completed" : "In Progress"}
+                  <Badge variant="default" className="text-xs">
+                    <XCircle className="w-3 h-3 mr-1" />
+                    In Progress
                   </Badge>
                 </div>
-                <div className="mt-2 mb-3">
+                {/* <div className="mt-2 mb-3">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Progress:{" "}
+                    Topics:{" "}
                     <span className="font-semibold">
-                      {item.currentPage}/{item.document.totalPages}
+                      {item.userTopics.length} //it should render the topic name
                     </span>
                   </p>
-                </div>
-                {/* <div className="text-xs text-gray-500">
-                  {item.completedAt
-                    ? `Completed: ${formatDateTime(item.completedAt)}`
-                    : `Last accessed: ${formatDateTime(item.updatedAt)}`}
                 </div> */}
-                <div className="flex justify-end mt-2">
+                {/* <div className="text-xs text-gray-500 mb-2">
+                  Last accessed: {new Date(item.updatedAt).toLocaleDateString()}
+                </div> */}
+                <div className="space-y-2">
+                  {item.userTopics.map((userTopic) => (
+                    <div
+                      key={userTopic.topic.id}
+                      className="text-sm text-gray-700 dark:text-gray-300"
+                    >
+                      • {userTopic.topic.name} ({userTopic.topic.pages} pages)
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end mt-4">
                   <Button variant="ghost" size="sm" className="text-xs">
                     Continue Reading
                   </Button>

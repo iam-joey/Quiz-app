@@ -3,7 +3,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
-import { FlagIcon, ArrowLeftIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import {
+  FlagIcon,
+  ArrowLeftIcon,
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 import { useSession } from "next-auth/react";
 import { authOptions } from "@/src/lib/auth";
 import Link from "next/link";
@@ -83,7 +87,9 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   //@ts-ignore
   const session = useSession(authOptions);
-  const [expandedExplanations, setExpandedExplanations] = useState<{ [key: string]: boolean }>({});
+  const [expandedExplanations, setExpandedExplanations] = useState<{
+    [key: string]: boolean;
+  }>({});
   console.log("simulation test result", simulationTestResult);
   useEffect(() => {
     const fetchTestData = async () => {
@@ -209,9 +215,9 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   };
 
   const toggleExplanation = (questionId: string) => {
-    setExpandedExplanations(prev => ({
+    setExpandedExplanations((prev) => ({
       ...prev,
-      [questionId]: !prev[questionId]
+      [questionId]: !prev[questionId],
     }));
   };
 
@@ -304,10 +310,12 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           onClick={() => toggleExplanation(question.id)}
                           className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
                         >
-                          <span className="font-semibold mr-2">Explanation</span>
+                          <span className="font-semibold mr-2">Paragraph</span>
                           <ChevronDownIcon
                             className={`h-5 w-5 transform transition-transform ${
-                              expandedExplanations[question.id] ? 'rotate-180' : ''
+                              expandedExplanations[question.id]
+                                ? "rotate-180"
+                                : ""
                             }`}
                           />
                         </button>
@@ -338,146 +346,162 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                   seconds
                 </p> */}
                 <div className="mt-6">
-                  {simulationTestResult.singleQuestion.map((question, index) => (
-                    <div
-                      key={`${question.id}`}
-                      className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
-                    >
-                      <h3 className="text-xl font-semibold mb-2">
-                        Question {index + 1} (Single)
-                        {question.level && (
-                          <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
-                            (Level: {question.level})
-                          </span>
-                        )}
-                      </h3>
-                      <p className="mb-2">{question.title}</p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <FlagIcon
-                            className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                            onClick={() => handleFlagClick(`${question.id}`)}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
-                          <p>Report to admin</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <div className="space-y-2">
-                        {question.choice.map((choice) => (
-                          <div
-                            key={choice.id}
-                            className={`p-2 rounded ${
-                              question.answer.includes(choice.id)
-                                ? "bg-green-200 dark:bg-green-700"
-                                : simulationTestResult.userAnswers[
-                                      index
-                                    ]?.includes(choice.id)
-                                  ? "bg-red-200 dark:bg-red-700"
-                                  : "bg-white dark:bg-gray-700"
-                            }`}
-                          >
-                            {choice.text}
-                            {question.answer.includes(choice.id) && " ✓"}
-                            {simulationTestResult.userAnswers[
-                              index
-                            ]?.includes(choice.id) &&
-                              !question.answer.includes(choice.id) &&
-                              " ✗"}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-4">
-                        <button
-                          onClick={() => toggleExplanation(question.id)}
-                          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-                        >
-                          <span className="font-semibold mr-2">Explanation</span>
-                          <ChevronDownIcon
-                            className={`h-5 w-5 transform transition-transform ${
-                              expandedExplanations[question.id] ? 'rotate-180' : ''
-                            }`}
-                          />
-                        </button>
-                        {expandedExplanations[question.id] && (
-                          <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
-                            <p>No explanation provided.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {simulationTestResult.multipleQuestion.map((question, index) => (
-                    <div
-                      key={`${question.id}`}
-                      className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
-                    >
-                      <h3 className="text-xl font-semibold mb-2">
-                        Question {simulationTestResult.singleQuestion.length + index + 1} (Multiple)
-                        {question.level && (
-                          <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
-                            (Level: {question.level})
-                          </span>
-                        )}
-                      </h3>
-                      <p className="mb-2">{question.title}</p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <FlagIcon
-                            className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                            onClick={() => handleFlagClick(`${question.id}`)}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
-                          <p>Report to admin</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <div className="space-y-2">
-                        {question.choice.map((choice) => (
-                          <div
-                            key={choice.id}
-                            className={`p-2 rounded ${
-                              question.answer.includes(choice.id)
-                                ? "bg-green-200 dark:bg-green-700"
-                                : simulationTestResult.userAnswers[
-                                      simulationTestResult.singleQuestion
-                                        .length + index
-                                    ]?.includes(choice.id)
-                                  ? "bg-red-200 dark:bg-red-700"
-                                  : "bg-white dark:bg-gray-700"
-                            }`}
-                          >
-                            {choice.text}
-                            {question.answer.includes(choice.id) && " ✓"}
-                            {simulationTestResult.userAnswers[
-                              simulationTestResult.singleQuestion.length +
+                  {simulationTestResult.singleQuestion.map(
+                    (question, index) => (
+                      <div
+                        key={`${question.id}`}
+                        className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
+                      >
+                        <h3 className="text-xl font-semibold mb-2">
+                          Question {index + 1} (Single)
+                          {question.level && (
+                            <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
+                              (Level: {question.level})
+                            </span>
+                          )}
+                        </h3>
+                        <p className="mb-2">{question.title}</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FlagIcon
+                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                              onClick={() => handleFlagClick(`${question.id}`)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                            <p>Report to admin</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <div className="space-y-2">
+                          {question.choice.map((choice) => (
+                            <div
+                              key={choice.id}
+                              className={`p-2 rounded ${
+                                question.answer.includes(choice.id)
+                                  ? "bg-green-200 dark:bg-green-700"
+                                  : simulationTestResult.userAnswers[
+                                        index
+                                      ]?.includes(choice.id)
+                                    ? "bg-red-200 dark:bg-red-700"
+                                    : "bg-white dark:bg-gray-700"
+                              }`}
+                            >
+                              {choice.text}
+                              {question.answer.includes(choice.id) && " ✓"}
+                              {simulationTestResult.userAnswers[
                                 index
-                            ]?.includes(choice.id) &&
-                              !question.answer.includes(choice.id) &&
-                              " ✗"}
-                          </div>
-                        ))}
+                              ]?.includes(choice.id) &&
+                                !question.answer.includes(choice.id) &&
+                                " ✗"}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4">
+                          <button
+                            onClick={() => toggleExplanation(question.id)}
+                            className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                          >
+                            <span className="font-semibold mr-2">
+                              Explanation
+                            </span>
+                            <ChevronDownIcon
+                              className={`h-5 w-5 transform transition-transform ${
+                                expandedExplanations[question.id]
+                                  ? "rotate-180"
+                                  : ""
+                              }`}
+                            />
+                          </button>
+                          {expandedExplanations[question.id] && (
+                            <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
+                              <p>No explanation provided.</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="mt-4">
-                        <button
-                          onClick={() => toggleExplanation(question.id)}
-                          className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-                        >
-                          <span className="font-semibold mr-2">Explanation</span>
-                          <ChevronDownIcon
-                            className={`h-5 w-5 transform transition-transform ${
-                              expandedExplanations[question.id] ? 'rotate-180' : ''
-                            }`}
-                          />
-                        </button>
-                        {expandedExplanations[question.id] && (
-                          <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
-                            <p>No explanation provided.</p>
-                          </div>
-                        )}
+                    )
+                  )}
+                  {simulationTestResult.multipleQuestion.map(
+                    (question, index) => (
+                      <div
+                        key={`${question.id}`}
+                        className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
+                      >
+                        <h3 className="text-xl font-semibold mb-2">
+                          Question{" "}
+                          {simulationTestResult.singleQuestion.length +
+                            index +
+                            1}{" "}
+                          (Multiple)
+                          {question.level && (
+                            <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
+                              (Level: {question.level})
+                            </span>
+                          )}
+                        </h3>
+                        <p className="mb-2">{question.title}</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <FlagIcon
+                              className="h-6 w-6 absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
+                              onClick={() => handleFlagClick(`${question.id}`)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
+                            <p>Report to admin</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <div className="space-y-2">
+                          {question.choice.map((choice) => (
+                            <div
+                              key={choice.id}
+                              className={`p-2 rounded ${
+                                question.answer.includes(choice.id)
+                                  ? "bg-green-200 dark:bg-green-700"
+                                  : simulationTestResult.userAnswers[
+                                        simulationTestResult.singleQuestion
+                                          .length + index
+                                      ]?.includes(choice.id)
+                                    ? "bg-red-200 dark:bg-red-700"
+                                    : "bg-white dark:bg-gray-700"
+                              }`}
+                            >
+                              {choice.text}
+                              {question.answer.includes(choice.id) && " ✓"}
+                              {simulationTestResult.userAnswers[
+                                simulationTestResult.singleQuestion.length +
+                                  index
+                              ]?.includes(choice.id) &&
+                                !question.answer.includes(choice.id) &&
+                                " ✗"}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4">
+                          <button
+                            onClick={() => toggleExplanation(question.id)}
+                            className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                          >
+                            <span className="font-semibold mr-2">
+                              Explanation
+                            </span>
+                            <ChevronDownIcon
+                              className={`h-5 w-5 transform transition-transform ${
+                                expandedExplanations[question.id]
+                                  ? "rotate-180"
+                                  : ""
+                              }`}
+                            />
+                          </button>
+                          {expandedExplanations[question.id] && (
+                            <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
+                              <p>No explanation provided.</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </>
             )}
