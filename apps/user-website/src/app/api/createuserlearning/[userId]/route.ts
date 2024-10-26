@@ -137,6 +137,7 @@ export const POST = async (
                   id: true,
                   name: true,
                   docfileName: true,
+                  pages: true,
                 },
               },
               currentPage: true,
@@ -144,9 +145,6 @@ export const POST = async (
           },
         },
       });
-
-      console.log("alreadyPresent", alreadyPresent);
-      console.log("userTopics", alreadyPresent!.userTopics);
 
       const pdfs = await Promise.all(
         alreadyPresent!.userTopics.map(async (userTopic) => {
@@ -170,7 +168,7 @@ export const POST = async (
         })
       );
       return NextResponse.json({
-        error: true,
+        error: false,
         message: "User document progress already exists",
         data: {
           ...alreadyPresent,

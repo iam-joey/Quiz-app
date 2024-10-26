@@ -72,6 +72,16 @@ export const POST = async (
         },
       },
     });
+    console.log("findLearningHistory", findLearningHistory);
+
+    await prisma.userLearningTopicIdsDetails.update({
+      where: {
+        id: findLearningHistory?.userTopics[0]!.id,
+      },
+      data: {
+        currentPage: page,
+      },
+    });
 
     if (!findLearningHistory) {
       return NextResponse.json(

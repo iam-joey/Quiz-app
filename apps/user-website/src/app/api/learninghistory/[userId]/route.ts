@@ -30,6 +30,7 @@ export const GET = async (
               select: {
                 id: true,
                 name: true,
+                pages: true,
               },
             },
           },
