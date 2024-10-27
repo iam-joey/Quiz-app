@@ -7,6 +7,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useTestContext } from "@/components/context/TestContext";
 import { useSimulationTestContext } from "@/components/context/SimulationTestContext";
+import { useLearningTopic } from '@/components/context/LearningTopicContext';
 
 export default function Home() {
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function Home() {
   const [existingProgressId, setExistingProgressId] = useState<string | null>(null);
   const [isResettingStudy, setIsResettingStudy] = useState(false);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
+  const { setLearningTopicData } = useLearningTopic();
 
   useEffect(() => {
     setTestData(null);
@@ -239,8 +241,6 @@ export default function Home() {
     setIsStartingStudy(true);
 
     try {
-      console.log("selectedTopics", selectedTopics);
-      console.log("userId", userId);
       const response = await fetch(`/api/createuserlearning/${userId}`, {
         method: "POST",
         headers: {
@@ -250,9 +250,9 @@ export default function Home() {
       });
 
       const result = await response.json();
-      console.log("result", result);
 
       if (result.data.new) {
+        setLearningTopicData(result.data);
         router.push(`/learningTopic/${result.data.id}`);
         toast.success(`Started study for ${selectedTopics.length} topic(s)`);
       } else {

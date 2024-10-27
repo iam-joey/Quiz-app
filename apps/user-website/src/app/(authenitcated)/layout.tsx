@@ -5,6 +5,7 @@ import NavBar from "../../components/NavBar/NavBar";
 import { Providers } from "@/src/providers/Providers";
 import { TestProvider } from "@/components/context/TestContext";
 import { SimulationTestProvider } from "@/components/context/SimulationTestContext";
+import { LearningTopicProvider } from "@/components/context/LearningTopicContext";
 
 const geistSans = localFont({
   src: "../fonts/GeistVF.woff",
@@ -33,8 +34,10 @@ export default function RootLayout({
         <Providers>
           <TestProvider>
             <SimulationTestProvider>
-              <NavBar />
-              {children}
+              <LearningTopicProvider>
+                <NavBar />
+                {children}
+              </LearningTopicProvider>
             </SimulationTestProvider>
           </TestProvider>
         </Providers>
