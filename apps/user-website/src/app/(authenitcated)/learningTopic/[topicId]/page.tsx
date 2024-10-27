@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from "react";
 import { PDFDocumentProxy, getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
 import { useTheme } from "next-themes";
+import { useLearningTopic } from '@/components/context/LearningTopicContext';
 
 // Set the workerSrc to the local worker
 GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -25,12 +26,19 @@ export default function LearningTopic() {
   const [numPages, setNumPages] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const { learningTopicData, setLearningTopicData } = useLearningTopic();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (session.data?.user) {
-      fetchTopics();
+      if (learningTopicData) {
+        processTopicsData(learningTopicData);
+        setIsLoading(false);
+      } else {
+        fetchTopics();
+      }
     }
-  }, [session.data?.user]);
+  }, [session.data?.user, learningTopicData]);
 
   useEffect(() => {
     if (topics.length > 0 && !selectedTopic) {
@@ -119,6 +127,8 @@ export default function LearningTopic() {
     } catch (error) {
       console.error("Error fetching topics:", error);
       setTopics([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -266,111 +276,121 @@ export default function LearningTopic() {
     setNumPages(topic.progress.totalPages || 0);
   };
 
+  const processTopicsData = (data: any) => {
+    // ... (same as before)
+  };
+
   return (
     <div
       className="container mx-auto p-4 flex"
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* PDF Viewer */}
-      <div className="w-3/4 pr-4">
-        <h1 className="text-2xl font-bold mb-4 text-center dark:text-white">
-          Learning Topic
-        </h1>
-        {selectedTopic && (
-          <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">
-            Topic: {selectedTopic.title}
-          </p>
-        )}
+      {isLoading ? (
+        <div className="w-full text-center">Loading...</div>
+      ) : (
+        <>
+          {/* PDF Viewer */}
+          <div className="w-3/4 pr-4">
+            <h1 className="text-2xl font-bold mb-4 text-center dark:text-white">
+              Learning Topic
+            </h1>
+            {selectedTopic && (
+              <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">
+                Topic: {selectedTopic.title}
+              </p>
+            )}
 
-        {/* Progress bar */}
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
-          <div
-            className="bg-blue-600 dark:bg-blue-400 h-2.5 rounded-full"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <p className="text-center mb-4 dark:text-white">
-          Progress: {Math.round(progress)}%
-        </p>
-
-        {pdfUrl ? (
-          <div
-            className="flex flex-col items-center"
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <div
-              ref={canvasRef}
-              className="flex justify-center select-none"
-              style={{
-                WebkitTouchCallout: "none",
-                WebkitUserSelect: "none",
-                KhtmlUserSelect: "none",
-                MozUserSelect: "none",
-                msUserSelect: "none",
-                userSelect: "none",
-              }}
-            ></div>
-            <div className="flex justify-between mt-4 w-full max-w-md">
-              <button
-                className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
-                disabled={pageNumber <= 1}
-                onClick={goToPrevPage}
-              >
-                Previous
-              </button>
-              <span className="self-center dark:text-white">
-                Page {pageNumber} of {numPages}
-              </span>
-              <button
-                className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
-                disabled={pageNumber >= numPages}
-                onClick={goToNextPage}
-              >
-                Next
-              </button>
-              <button
-                className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded"
-                onClick={goToFirstPage}
-              >
-                Back to Start
-              </button>
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
+              <div
+                className="bg-blue-600 dark:bg-blue-400 h-2.5 rounded-full"
+                style={{ width: `${progress}%` }}
+              ></div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center dark:text-white">
-            No PDF available for this topic.
-          </div>
-        )}
-      </div>
+            <p className="text-center mb-4 dark:text-white">
+              Progress: {Math.round(progress)}%
+            </p>
 
-      {/* Topics sidebar */}
-      <div className="w-1/4 pl-4 border-l border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-semibold mb-4 dark:text-white">Topics</h2>
-        {Array.isArray(topics) && topics.length > 0 ? (
-          <ul>
-            {topics.map((topic) => (
-              <li
-                key={topic.id}
-                className={`cursor-pointer p-2 mb-2 rounded transition-colors duration-200
-                  ${
-                    selectedTopic?.id === topic.id
-                      ? "bg-blue-100 dark:bg-blue-900"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                onClick={() => handleTopicClick(topic)}
+            {pdfUrl ? (
+              <div
+                className="flex flex-col items-center"
+                onContextMenu={(e) => e.preventDefault()}
               >
-                <div className="dark:text-white">{topic.title}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Page {topic.progress.currentPage} /{" "}
-                  {topic.progress.totalPages || "?"}
+                <div
+                  ref={canvasRef}
+                  className="flex justify-center select-none"
+                  style={{
+                    WebkitTouchCallout: "none",
+                    WebkitUserSelect: "none",
+                    KhtmlUserSelect: "none",
+                    MozUserSelect: "none",
+                    msUserSelect: "none",
+                    userSelect: "none",
+                  }}
+                ></div>
+                <div className="flex justify-between mt-4 w-full max-w-md">
+                  <button
+                    className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                    disabled={pageNumber <= 1}
+                    onClick={goToPrevPage}
+                  >
+                    Previous
+                  </button>
+                  <span className="self-center dark:text-white">
+                    Page {pageNumber} of {numPages}
+                  </span>
+                  <button
+                    className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                    disabled={pageNumber >= numPages}
+                    onClick={goToNextPage}
+                  >
+                    Next
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded"
+                    onClick={goToFirstPage}
+                  >
+                    Back to Start
+                  </button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="dark:text-white">No topics available.</p>
-        )}
-      </div>
+              </div>
+            ) : (
+              <div className="text-center dark:text-white">
+                No PDF available for this topic.
+              </div>
+            )}
+          </div>
+
+          {/* Topics sidebar */}
+          <div className="w-1/4 pl-4 border-l border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 dark:text-white">Topics</h2>
+            {Array.isArray(topics) && topics.length > 0 ? (
+              <ul>
+                {topics.map((topic) => (
+                  <li
+                    key={topic.id}
+                    className={`cursor-pointer p-2 mb-2 rounded transition-colors duration-200
+                      ${
+                        selectedTopic?.id === topic.id
+                          ? "bg-blue-100 dark:bg-blue-900"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                    onClick={() => handleTopicClick(topic)}
+                  >
+                    <div className="dark:text-white">{topic.title}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Page {topic.progress.currentPage} /{" "}
+                      {topic.progress.totalPages || "?"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="dark:text-white">No topics available.</p>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
