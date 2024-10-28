@@ -130,6 +130,7 @@ export async function GET(
       message: "User document progress already exists",
       data: {
         ...userLearningHistory,
+        new: false,
         pdfs,
       },
     });

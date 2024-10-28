@@ -47,7 +47,7 @@ export default function Home() {
   const [existingProgressId, setExistingProgressId] = useState<string | null>(null);
   const [isResettingStudy, setIsResettingStudy] = useState(false);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
-  const { setLearningTopicData } = useLearningTopic();
+  const { learningTopicData, setLearningTopicData } = useLearningTopic();
 
   useEffect(() => {
     setTestData(null);
@@ -251,19 +251,17 @@ export default function Home() {
       });
 
       const result = await response.json();
+      console.log("result", result);
 
       if (result.data.new) {
-        // Store the data in context only
-        const processedData = {
-          ...result.data,
-          pdfs: result.data.pdfs,
-          userTopics: result.data.userTopics
-        };
-        setLearningTopicData(processedData);
+        console.log("result.data", result.data);
+        // Store the complete response data in context
+        setLearningTopicData(result.data);
         
         router.push(`/learningTopic/${result.data.id}`);
         toast.success(`Started study for ${selectedTopics.length} topic(s)`);
       } else {
+        setLearningTopicData(result.data);
         setExistingProgressId(result.data.id);
         setShowContinueDialog(true);
       }
@@ -295,15 +293,8 @@ export default function Home() {
     setIsResettingStudy(true);
 
     try {
-      // Fetch the current learning history to get all topic IDs
-      const response = await fetch(`/api/learningtopic/${userId}/${existingProgressId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch learning history');
-      }
-      const data = await response.json();
-
-      // Reset each topic's current page to 1
-      const resetPromises = data.data.userTopics.map(async (userTopic: any) => {
+      // Use learningTopicData instead of setLearningTopicData
+      const resetPromises = (learningTopicData as any).userTopics.map(async (userTopic: any) => {
         const resetResponse = await fetch(`/api/updatecurrentpage/${userId}/${existingProgressId}/${userTopic.topic.id}`, {
           method: 'POST',
           headers: {
@@ -317,7 +308,6 @@ export default function Home() {
         }
       });
 
-      // Wait for all reset operations to complete
       await Promise.all(resetPromises);
 
       router.push(`/learningTopic/${existingProgressId}`);
@@ -325,6 +315,7 @@ export default function Home() {
     } catch (error) {
       console.error('Error resetting study progress:', error);
       toast.error("An error occurred while resetting study progress");
+    } finally {
       setIsResettingStudy(false);
     }
 
@@ -470,7 +461,7 @@ export default function Home() {
                 Explore various learning topics
               </p>
               <button
-                onClick={() => setShowLearningTopicsDialog(true)}
+                onClick={() => router.push("/topics")}
                 className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
                 Start
