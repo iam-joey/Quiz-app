@@ -542,8 +542,9 @@ export default function LearningTopic() {
                 Learning Topic
               </h1>
               <button
-                className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded"
+                className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => router.push("/topics")}
+                disabled={progress < 100}
               >
                 Back to Start
               </button>
