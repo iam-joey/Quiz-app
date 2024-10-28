@@ -34,22 +34,33 @@ export default function LearningTopic() {
   // Initialize topicsProgress when topics are loaded
   useEffect(() => {
     if (topics.length > 0) {
-      const initialProgress = topics.reduce((acc, topic) => ({
-        ...acc,
-        [topic.id]: topic.progress.currentPage || 1
-      }), {});
+      const initialProgress = topics.reduce((acc, topic) => {
+        // If the topic is completed, use totalPages as currentPage
+        const isCompleted = topics.indexOf(topic) < currentTopicIndex;
+        return {
+          ...acc,
+          [topic.id]: isCompleted ? topic.progress.totalPages : (topic.progress.currentPage || 1)
+        };
+      }, {});
       setTopicsProgress(initialProgress);
     }
-  }, [topics]);
+  }, [topics, currentTopicIndex]);
 
   // Calculate overall progress
   const calculateOverallProgress = () => {
     if (!topics.length) return 0;
     
     const totalPages = topics.reduce((sum, topic) => sum + topic.progress.totalPages, 0);
-    const completedPages = topics.reduce((sum, topic) => {
-      const currentProgress = topicsProgress[topic.id] || topic.progress.currentPage || 1;
-      return sum + currentProgress;
+    const completedPages = topics.reduce((sum, topic, index) => {
+      if (index < currentTopicIndex) {
+        // Add all pages from completed topics
+        return sum + topic.progress.totalPages;
+      } else if (index === currentTopicIndex) {
+        // Add current progress from the active topic
+        return sum + (topicsProgress[topic.id] || 1);
+      }
+      // Don't add pages from topics not yet started
+      return sum;
     }, 0);
     
     return Math.round((completedPages / totalPages) * 100);
@@ -64,49 +75,63 @@ export default function LearningTopic() {
   }, [topics, topicsProgress]);
 
   useEffect(() => {
-    if (session.data?.user) {
-      if (learningTopicData) {
-        // Process the data from context
-        const topicsArray = learningTopicData.userTopics.map((userTopic: any) => {
-          const pdfData = learningTopicData.pdfs.find(
-            (pdf: any) => pdf.topicId === userTopic.topic.id
-          );
-          return {
-            id: userTopic.topic.id,
-            title: userTopic.topic.name,
-            pdfUrl: pdfData?.pdf
-              ? `data:application/pdf;base64,${pdfData.pdf}`
-              : null,
-            progress: {
-              currentPage: userTopic.currentPage || 1,
-              totalPages: userTopic.topic.pages || 0,
-            },
-          };
-        });
+    if (!session.data?.user) return;
 
-        setTopics(topicsArray);
-        setIsLoading(false);
-      } else {
-        // If no context data, fetch from API
-        fetchTopics();
-      }
+    // Check if we already have data in the state
+    if (topics.length > 0) return;
+
+    // If we have context data, use it without making API calls
+    if (learningTopicData?.userTopics) {
+      console.log("Using context data");
+      const topicsArray = learningTopicData.userTopics.map((userTopic: any) => {
+        const pdfData = learningTopicData.pdfs.find(
+          (pdf: any) => pdf.topicId === userTopic.topic.id
+        );
+        return {
+          id: userTopic.topic.id,
+          title: userTopic.topic.name,
+          pdfUrl: pdfData?.pdf
+            ? `data:application/pdf;base64,${pdfData.pdf}`
+            : null,
+          progress: {
+            currentPage: userTopic.currentPage || 1,
+            totalPages: userTopic.topic.pages || 0,
+          },
+        };
+      });
+
+      setTopics(topicsArray);
+
+      // Initialize topicsProgress with actual saved progress
+      const initialProgress = topicsArray.reduce((acc: any, topic: any) => ({
+        ...acc,
+        [topic.id]: topic.progress.currentPage
+      }), {});
+      setTopicsProgress(initialProgress);
+
+      // Calculate and set overall progress
+      const overallProgress = calculateOverallProgress();
+      setProgress(overallProgress);
+
+      setIsLoading(false);
+      return;
     }
-  }, [session.data?.user, learningTopicData]);
 
+    // Only fetch if we don't have context data
+    console.log("Fetching data from API");
+    fetchTopics();
+  }, [session.data?.user, learningTopicData]);
+  
   useEffect(() => {
     if (topics.length > 0 && !selectedTopic) {
-      // Find the topic that matches the progressId from the URL
-      const initialTopic = topics.find(topic => topic.id === progressId) || topics[0];
-      const topicIndex = topics.findIndex(topic => topic.id === initialTopic.id);
-      
-      setSelectedTopic(initialTopic);
-      setPdfUrl(initialTopic.pdfUrl);
-      // Make sure to use the saved current page
-      const savedPage = initialTopic.progress.currentPage || 1;
-      setPageNumber(savedPage);
-      setCurrentTopicIndex(topicIndex);
+      const topic = topics.find(t => t.id === progressId) || topics[0];
+      setSelectedTopic(topic);
+      setPdfUrl(topic.pdfUrl);
+      // Use the stored progress or the saved current page
+      const currentTopicPage = topicsProgress[topic.id] || topic.progress.currentPage;
+      setPageNumber(currentTopicPage);
     }
-  }, [topics, selectedTopic, progressId]);
+  }, [topics, progressId]);
 
   useEffect(() => {
     if (selectedTopic && selectedTopic.pdfUrl) {
@@ -135,7 +160,21 @@ export default function LearningTopic() {
     };
   }, []);
 
+  useEffect(() => {
+    // Load current topic index from local storage
+    const savedTopicIndex = localStorage.getItem('currentTopicIndex');
+    if (savedTopicIndex !== null) {
+      setCurrentTopicIndex(parseInt(savedTopicIndex, 10));
+    }
+  }, []);
+
+  // Update local storage whenever the current topic index changes
+  useEffect(() => {
+    localStorage.setItem('currentTopicIndex', currentTopicIndex.toString());
+  }, [currentTopicIndex]);
+
   const fetchTopics = async () => {
+    console.log("fetchTopics called");
     const userId = (session.data?.user as any)?.id;
     try {
       const response = await fetch(`/api/learningtopic/${userId}/${progressId}`);
@@ -144,8 +183,7 @@ export default function LearningTopic() {
       }
       const data = await response.json();
       
-      setLearningTopicData(data.data);
-
+      // Process the data for local state
       const topicsArray = data.data.userTopics.map((userTopic: any) => {
         const pdfData = data.data.pdfs.find(
           (pdf: any) => pdf.topicId === userTopic.topic.id
@@ -159,11 +197,41 @@ export default function LearningTopic() {
           progress: {
             currentPage: parseInt(userTopic.currentPage) || 1,
             totalPages: parseInt(userTopic.topic.pages) || 0,
+            isCompleted: parseInt(userTopic.currentPage) >= parseInt(userTopic.topic.pages)
           },
         };
       });
 
+      // Find the current topic index based on progress
+      let currentIndex = 0;
+      for (let i = 0; i < topicsArray.length; i++) {
+        if (topicsArray[i].id === progressId) {
+          currentIndex = i;
+          break;
+        }
+        if (topicsArray[i].progress.isCompleted && i + 1 < topicsArray.length) {
+          currentIndex = i + 1;
+        }
+      }
+
       setTopics(topicsArray);
+      setCurrentTopicIndex(currentIndex);
+
+      // Initialize topicsProgress with actual saved progress
+      const initialProgress = topicsArray.reduce((acc:any, topic:any) => ({
+        ...acc,
+        [topic.id]: topic.progress.currentPage
+      }), {});
+      setTopicsProgress(initialProgress);
+
+      // Set the selected topic
+      const selectedTopic = topicsArray.find((t:any) => t.id === progressId) || topicsArray[currentIndex];
+      if (selectedTopic) {
+        setSelectedTopic(selectedTopic);
+        setPdfUrl(selectedTopic.pdfUrl);
+        setPageNumber(selectedTopic.progress.currentPage);
+      }
+
     } catch (error) {
       console.error("Error fetching topics:", error);
       setTopics([]);
@@ -250,7 +318,7 @@ export default function LearningTopic() {
   const updateCurrentPage = async (newPage: number) => {
     if (!session.data?.user || !selectedTopic) return;
     const userId = (session.data.user as any).id;
-
+    alert(selectedTopic.id);
     try {
       const response = await fetch(
         `/api/updatecurrentpage/${userId}/${progressId}/${selectedTopic.id}`,
@@ -308,33 +376,47 @@ export default function LearningTopic() {
     }
   };
 
-  const goToPrevPage = () => {
+  const goToPrevPage = async () => {
     if (pageNumber > 1) {
       const newPage = pageNumber - 1;
       setPageNumber(newPage);
-      updateCurrentPage(newPage);
+      await updateCurrentPage(newPage);
     } else if (currentTopicIndex > 0) {
-      // Go to previous topic's last page
+      // First save current topic's progress
+      await updateCurrentPage(pageNumber);
+
+      // Go to previous topic
       const prevTopic = topics[currentTopicIndex - 1];
       setCurrentTopicIndex(currentTopicIndex - 1);
-      handleTopicClick(prevTopic);
-      setPageNumber(prevTopic.progress.totalPages);
-      updateCurrentPage(prevTopic.progress.totalPages);
+      setSelectedTopic(prevTopic);
+      setPdfUrl(prevTopic.pdfUrl);
+
+      // Use the stored progress for the previous topic
+      const prevTopicPage = topicsProgress[prevTopic.id] || prevTopic.progress.currentPage;
+      setPageNumber(prevTopicPage);
     }
   };
 
-  const goToNextPage = () => {
+  const goToNextPage = async () => {
     if (pageNumber < numPages) {
       const newPage = pageNumber + 1;
       setPageNumber(newPage);
-      updateCurrentPage(newPage);
+      await updateCurrentPage(newPage);
     } else if (currentTopicIndex < topics.length - 1) {
-      // Go to next topic's first page
+      // First save current topic's progress
+      await updateCurrentPage(numPages);
+
+      // Get the next topic
       const nextTopic = topics[currentTopicIndex + 1];
+      
+      // Update states for the next topic
       setCurrentTopicIndex(currentTopicIndex + 1);
-      handleTopicClick(nextTopic);
-      setPageNumber(1);
-      updateCurrentPage(1);
+      setSelectedTopic(nextTopic);
+      setPdfUrl(nextTopic.pdfUrl);
+      
+      // Use the stored progress for the next topic
+      const nextTopicPage = topicsProgress[nextTopic.id] || nextTopic.progress.currentPage;
+      setPageNumber(nextTopicPage);
     }
   };
 
@@ -343,21 +425,32 @@ export default function LearningTopic() {
     updateCurrentPage(1);
   };
 
-  const handleTopicClick = (topic: any) => {
-    setSelectedTopic(topic);
-    setPdfUrl(topic.pdfUrl);
-    const currentPage = topicsProgress[topic.id] || topic.progress.currentPage || 1;
-    setPageNumber(currentPage);
-    setNumPages(topic.progress.totalPages || 0);
-    const index = topics.findIndex((t) => t.id === topic.id);
-    setCurrentTopicIndex(index);
-  };
+  // const handleTopicClick = (topic: any) => {
+  //   setSelectedTopic(topic);
+  //   setPdfUrl(topic.pdfUrl);
+  //   const currentPage = topicsProgress[topic.id] || topic.progress.currentPage || 1;
+  //   setPageNumber(currentPage);
+  //   setNumPages(topic.progress.totalPages || 0);
+  //   const index = topics.findIndex((t) => t.id === topic.id);
+  //   setCurrentTopicIndex(index);
+  // };
 
   useEffect(() => {
     if (selectedTopic && selectedTopic.progress.currentPage) {
+      // Ensure the page number is set to the current page of the selected topic
       setPageNumber(selectedTopic.progress.currentPage);
     }
   }, [selectedTopic]);
+
+  // Add this useEffect near your other useEffect hooks
+  useEffect(() => {
+    // Cleanup function that runs when component unmounts
+    return () => {
+      if (setLearningTopicData) {
+        setLearningTopicData(null);
+      }
+    };
+  }, []); // Empty dependency array means this runs only on unmount
 
   return (
     <div
@@ -375,7 +468,7 @@ export default function LearningTopic() {
               </h1>
               <button
                 className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded"
-                onClick={goToFirstPage}
+                onClick={() => router.push("/topics")}
               >
                 Back to Start
               </button>
@@ -399,7 +492,14 @@ export default function LearningTopic() {
                 ></div>
               </div>
               <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                {topics.reduce((sum, topic) => sum + (topicsProgress[topic.id] || topic.progress.currentPage || 1), 0)} of {' '}
+                {topics.reduce((sum, topic, index) => {
+                  if (index < currentTopicIndex) {
+                    return sum + topic.progress.totalPages;
+                  } else if (index === currentTopicIndex) {
+                    return sum + (topicsProgress[topic.id] || 1);
+                  }
+                  return sum;
+                }, 0)} of {' '}
                 {topics.reduce((sum, topic) => sum + topic.progress.totalPages, 0)} pages completed
               </div>
             </div>
@@ -461,11 +561,14 @@ export default function LearningTopic() {
                           ? "bg-blue-100 dark:bg-blue-900"
                           : "hover:bg-gray-100 dark:hover:bg-gray-800"
                       }`}
-                    onClick={() => handleTopicClick(topic)}
+                    // onClick={() => handleTopicClick(topic)}
                   >
                     <div className="dark:text-white">{topic.title}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Page {topic.progress.currentPage} of {topic.progress.totalPages}
+                      Page {index < currentTopicIndex 
+                        ? `${topic.progress.totalPages} of ${topic.progress.totalPages}` // Show final page for completed topics
+                        : `${topicsProgress[topic.id] || 1} of ${topic.progress.totalPages}`
+                      }
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {index < currentTopicIndex ? (
