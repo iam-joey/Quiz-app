@@ -84,6 +84,8 @@ export const POST = async (
       topics: string[];
     } = await req.json();
     console.log("topics", topics.length);
+    console.log("userId", userId);
+    console.log("topics", topics);
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
