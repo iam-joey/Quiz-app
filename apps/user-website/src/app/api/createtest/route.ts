@@ -1,6 +1,9 @@
+import RedisCache from "@/src/lib/cache/redisservice";
 import { UserTestDetailSchema } from "@/src/lib/validation";
 import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
+
+const redisCache = RedisCache.getInstance(); // Singleton instance of RedisCache
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -16,156 +19,142 @@ export const POST = async (req: NextRequest) => {
     }
 
     const testDetails = testSchema.data;
-    let selectedQuestions;
     let responseData;
 
-    const calculateQuestionDistribution = (totalQuestions: any) => {
+    const calculateQuestionDistribution = (totalQuestions: number) => {
       const easyQuestions = Math.ceil(totalQuestions * 0.4);
       const mediumQuestions = Math.ceil(totalQuestions * 0.4);
       const hardQuestions = totalQuestions - (easyQuestions + mediumQuestions);
       return { easyQuestions, mediumQuestions, hardQuestions };
     };
 
-    const fetchQuestions = async (categoryId: any, numberOfQuestions: any) => {
-      if (!numberOfQuestions) {
-        const allQuestions = await prisma.question.findMany({
-          where: {
-            categoryId,
-            category: {
-              deleted: false,
-            },
-          },
-          select: {
-            id: true,
-            question: true,
-            choice: {
-              select: {
-                id: true,
-                text: true,
-              },
-            },
-            level: true,
-          },
-        });
+    const fetchQuestions = async (
+      categoryId: string,
+      numberOfQuestions: number
+    ) => {
+      const cacheKey = `questions:${categoryId}:${numberOfQuestions}`;
+      let cachedQuestions =
+        await redisCache.get<
+          Array<{ id: string; question: string; choice: any[]; level: string }>
+        >(cacheKey);
 
-        return allQuestions.sort(() => 0.5 - Math.random());
-      } else {
-        const { easyQuestions, mediumQuestions, hardQuestions } =
-          calculateQuestionDistribution(numberOfQuestions);
-
-        const easy = await prisma.question.findMany({
-          where: {
-            categoryId,
-            level: "EASY",
-            category: {
-              deleted: false,
-            },
-          },
-          take: easyQuestions,
-          select: {
-            id: true,
-            question: true,
-            choice: {
-              select: {
-                id: true,
-                text: true,
-              },
-            },
-            level: true,
-          },
-        });
-
-        const medium = await prisma.question.findMany({
-          where: {
-            categoryId,
-            level: "MEDIUM",
-            category: {
-              deleted: false,
-            },
-          },
-          take: mediumQuestions,
-          select: {
-            id: true,
-            question: true,
-            choice: {
-              select: {
-                id: true,
-                text: true,
-              },
-            },
-            level: true,
-          },
-        });
-
-        const hard = await prisma.question.findMany({
-          where: {
-            categoryId,
-            level: "HARD",
-            category: {
-              deleted: false,
-            },
-          },
-          take: hardQuestions,
-          select: {
-            id: true,
-            question: true,
-            choice: {
-              select: {
-                id: true,
-                text: true,
-              },
-            },
-            level: true,
-          },
-        });
-
-        const selectedQuestions = [...easy, ...medium, ...hard];
-
-        // Shuffle questions to randomize the order
-        return selectedQuestions.sort(() => 0.5 - Math.random());
+      if (cachedQuestions && cachedQuestions.length) {
+        console.log(
+          `Cache hit for category ${categoryId} with ${numberOfQuestions} questions`
+        );
+        return cachedQuestions;
       }
+
+      console.log(
+        `Cache miss for category ${categoryId} with ${numberOfQuestions} questions`
+      );
+
+      const totalEasy = await prisma.question.count({
+        where: {
+          categoryId,
+          level: "EASY",
+          category: { deleted: false },
+        },
+      });
+      console.log("totalEasy", totalEasy);
+      const totalMedium = await prisma.question.count({
+        where: {
+          categoryId,
+          level: "MEDIUM",
+          category: { deleted: false },
+        },
+      });
+      console.log("totalMedium", totalMedium);
+      const totalHard = await prisma.question.count({
+        where: {
+          categoryId,
+          level: "HARD",
+          category: { deleted: false },
+        },
+      });
+      console.log("totalHard", totalHard);
+      const totalAvailable = totalEasy + totalMedium + totalHard;
+
+      let easyQuestions = 0;
+      let mediumQuestions = 0;
+      let hardQuestions = 0;
+
+      if (numberOfQuestions < totalAvailable) {
+        const distribution = calculateQuestionDistribution(numberOfQuestions);
+        easyQuestions = distribution.easyQuestions;
+        mediumQuestions = distribution.mediumQuestions;
+        hardQuestions = distribution.hardQuestions;
+      } else {
+        easyQuestions = totalEasy;
+        mediumQuestions = totalMedium;
+        hardQuestions = totalHard;
+      }
+
+      const easy = await prisma.question.findMany({
+        where: { categoryId, level: "EASY", category: { deleted: false } },
+        take: easyQuestions,
+        select: {
+          id: true,
+          question: true,
+          choice: { select: { id: true, text: true } },
+          level: true,
+        },
+      });
+      console.log("easy", easy.length);
+
+      const medium = await prisma.question.findMany({
+        where: { categoryId, level: "MEDIUM", category: { deleted: false } },
+        take: mediumQuestions,
+        select: {
+          id: true,
+          question: true,
+          choice: { select: { id: true, text: true } },
+          level: true,
+        },
+      });
+      console.log("medium", medium.length);
+
+      const hard = await prisma.question.findMany({
+        where: { categoryId, level: "HARD", category: { deleted: false } },
+        take: hardQuestions,
+        select: {
+          id: true,
+          question: true,
+          choice: { select: { id: true, text: true } },
+          level: true,
+        },
+      });
+      console.log("hard", hard.length);
+
+      const selectedQuestions = [...easy, ...medium, ...hard].sort(
+        () => 0.5 - Math.random()
+      );
+
+      console.log("selectedQuestions", selectedQuestions.length);
+
+      await redisCache.set(cacheKey, selectedQuestions);
+      return selectedQuestions;
     };
 
     if (testDetails.testType === "SIMULATION") {
-      console.log("Creating SIMULATION test");
-      // Fetch questions for simulation (assuming simulation does not follow 40%-40%-20% logic)
       const singleAnswerQuestions = await prisma.question.findMany({
-        where: {
-          isMultipleAnswer: false,
-          category: {
-            deleted: false,
-          },
-        },
+        where: { isMultipleAnswer: false, category: { deleted: false } },
         take: 50,
         select: {
           id: true,
           title: true,
-          choice: {
-            select: {
-              id: true,
-              text: true,
-            },
-          },
+          choice: { select: { id: true, text: true } },
           level: true,
         },
       });
+
       const multipleAnswerQuestions = await prisma.question.findMany({
-        where: {
-          isMultipleAnswer: true,
-          category: {
-            deleted: false,
-          },
-        },
+        where: { isMultipleAnswer: true, category: { deleted: false } },
         take: 150,
         select: {
           id: true,
           title: true,
-          choice: {
-            select: {
-              id: true,
-              text: true,
-            },
-          },
+          choice: { select: { id: true, text: true } },
           level: true,
         },
       });
@@ -190,14 +179,10 @@ export const POST = async (req: NextRequest) => {
           numberOfQuestions:
             singleAnswerQuestions.length + multipleAnswerQuestions.length,
           singleQuestion: {
-            connect: singleAnswerQuestions.map((question) => ({
-              id: question.id,
-            })),
+            connect: singleAnswerQuestions.map((q) => ({ id: q.id })),
           },
           multipleQuestion: {
-            connect: multipleAnswerQuestions.map((question) => ({
-              id: question.id,
-            })),
+            connect: multipleAnswerQuestions.map((q) => ({ id: q.id })),
           },
         },
         select: {
@@ -206,26 +191,16 @@ export const POST = async (req: NextRequest) => {
             select: {
               id: true,
               title: true,
-              choice: {
-                select: {
-                  id: true,
-                  text: true,
-                },
-              },
-              level: true, // Include level for response
+              choice: { select: { id: true, text: true } },
+              level: true,
             },
           },
           multipleQuestion: {
             select: {
               id: true,
               title: true,
-              choice: {
-                select: {
-                  id: true,
-                  text: true,
-                },
-              },
-              level: true, // Include level for response
+              choice: { select: { id: true, text: true } },
+              level: true,
             },
           },
           testType: true,
@@ -240,7 +215,7 @@ export const POST = async (req: NextRequest) => {
           ({ id, title, choice, level }) => ({
             questionId: id,
             title,
-            level, // Add level in the response
+            level,
             choice: choice.map(({ id, text }) => ({ id, text })),
           })
         ),
@@ -248,7 +223,7 @@ export const POST = async (req: NextRequest) => {
           ({ id, title, choice, level }) => ({
             questionId: id,
             title,
-            level, // Add level in the response
+            level,
             choice: choice.map(({ id, text }) => ({ id, text })),
           })
         ),
@@ -257,15 +232,13 @@ export const POST = async (req: NextRequest) => {
         duration: simulationTestDetail.duration,
       };
 
-      console.log("SIMULATION test created successfully", responseData);
       return NextResponse.json({
         msg: "SIMULATION test created successfully",
         err: false,
         data: responseData,
       });
     } else {
-      // Fetch selected questions (either all or according to 40%-40%-20% logic)
-      selectedQuestions = await fetchQuestions(
+      const selectedQuestions = await fetchQuestions(
         testDetails.categoryId,
         testDetails.numberOfQuestions
       );
@@ -279,9 +252,7 @@ export const POST = async (req: NextRequest) => {
           isCompleted: false,
           isTimed: testDetails.isTimed,
           testType: testDetails.testType,
-          question: {
-            connect: selectedQuestions.map((question) => ({ id: question.id })),
-          },
+          question: { connect: selectedQuestions.map((q) => ({ id: q.id })) },
         },
         select: {
           id: true,
@@ -289,13 +260,8 @@ export const POST = async (req: NextRequest) => {
             select: {
               id: true,
               question: true,
-              choice: {
-                select: {
-                  id: true,
-                  text: true,
-                },
-              },
-              level: true, // Include level for response
+              choice: { select: { id: true, text: true } },
+              level: true,
             },
           },
           testType: true,
@@ -303,6 +269,7 @@ export const POST = async (req: NextRequest) => {
           duration: true,
         },
       });
+      console.log("userTestDetail", userTestDetail.question.length);
 
       responseData = {
         id: userTestDetail.id,
@@ -323,9 +290,9 @@ export const POST = async (req: NextRequest) => {
       });
     }
   } catch (error) {
-    console.error("Error while creating test details:", error);
+    console.error("Error in POST request:", error);
     return NextResponse.json({
-      msg: "Something went wrong while creating test details",
+      msg: "An error occurred",
       err: true,
       data: null,
     });

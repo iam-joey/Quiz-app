@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
         level,
       } = record;
       const isMultipleAnswer = answer.includes(",");
-
+      console.log("the answer and leve is", answer, level);
       const levelEnum = mapLevelToEnum(level);
-
+      console.log("the level enum is", levelEnum);
       const newQuestion = await prisma.question.create({
         data: {
           title: question.substring(0, 50),

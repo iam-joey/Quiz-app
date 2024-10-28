@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import FacebookProvider from "next-auth/providers/facebook";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@repo/db/client";
 import type { Adapter } from "next-auth/adapters";
@@ -14,7 +15,7 @@ export const authOptions: NextAuthOptions = {
       // clientId:
       //   "548624448516-j66otmb4bk9c5vdl51urtrt0eg294er1.apps.googleusercontent.com",
       // clientSecret: "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",
-      // this is for the main website
+      // // this is for the main website
       clientId:
         "548624448516-9aphfvepsbtjk610eqb2tngok81kfkc9.apps.googleusercontent.com",
       clientSecret: "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",
@@ -25,6 +26,11 @@ export const authOptions: NextAuthOptions = {
           response_type: "code",
         },
       },
+    }),
+    FacebookProvider({
+      clientId: "545817918388942",
+      clientSecret: "5adf187ebeec0927e1c09d9f47edfca5",
+      authorization: { params: { scope: "email" } },
     }),
   ],
   session: {
