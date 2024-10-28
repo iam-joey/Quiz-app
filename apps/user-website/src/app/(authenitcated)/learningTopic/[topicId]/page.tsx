@@ -28,13 +28,66 @@ export default function LearningTopic() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { learningTopicData, setLearningTopicData } = useLearningTopic();
   const [isLoading, setIsLoading] = useState(true);
+  const [currentTopicIndex, setCurrentTopicIndex] = useState<number>(0);
+  const [topicsProgress, setTopicsProgress] = useState<Record<string, number>>({});
+
+  // Initialize topicsProgress when topics are loaded
+  useEffect(() => {
+    if (topics.length > 0) {
+      const initialProgress = topics.reduce((acc, topic) => ({
+        ...acc,
+        [topic.id]: topic.progress.currentPage || 1
+      }), {});
+      setTopicsProgress(initialProgress);
+    }
+  }, [topics]);
+
+  // Calculate overall progress
+  const calculateOverallProgress = () => {
+    if (!topics.length) return 0;
+    
+    const totalPages = topics.reduce((sum, topic) => sum + topic.progress.totalPages, 0);
+    const completedPages = topics.reduce((sum, topic) => {
+      const currentProgress = topicsProgress[topic.id] || topic.progress.currentPage || 1;
+      return sum + currentProgress;
+    }, 0);
+    
+    return Math.round((completedPages / totalPages) * 100);
+  };
+
+  // Update progress whenever relevant states change
+  useEffect(() => {
+    if (topics.length > 0) {
+      const overallProgress = calculateOverallProgress();
+      setProgress(overallProgress);
+    }
+  }, [topics, topicsProgress]);
 
   useEffect(() => {
     if (session.data?.user) {
       if (learningTopicData) {
-        processTopicsData(learningTopicData);
+        // Process the data from context
+        const topicsArray = learningTopicData.userTopics.map((userTopic: any) => {
+          const pdfData = learningTopicData.pdfs.find(
+            (pdf: any) => pdf.topicId === userTopic.topic.id
+          );
+          return {
+            id: userTopic.topic.id,
+            title: userTopic.topic.name,
+            pdfUrl: pdfData?.pdf
+              ? `data:application/pdf;base64,${pdfData.pdf}`
+              : null,
+            progress: {
+              currentPage: userTopic.currentPage || 1,
+              totalPages: userTopic.topic.pages || 0,
+            },
+          };
+        });
+
+        setTopics(topicsArray);
         setIsLoading(false);
       } else {
+        // If no context data, fetch from API
         fetchTopics();
       }
     }
@@ -42,12 +95,18 @@ export default function LearningTopic() {
 
   useEffect(() => {
     if (topics.length > 0 && !selectedTopic) {
-      const defaultTopic = topics[0];
-      setSelectedTopic(defaultTopic);
-      setPdfUrl(defaultTopic.pdfUrl);
-      setPageNumber(defaultTopic.progress.currentPage);
+      // Find the topic that matches the progressId from the URL
+      const initialTopic = topics.find(topic => topic.id === progressId) || topics[0];
+      const topicIndex = topics.findIndex(topic => topic.id === initialTopic.id);
+      
+      setSelectedTopic(initialTopic);
+      setPdfUrl(initialTopic.pdfUrl);
+      // Make sure to use the saved current page
+      const savedPage = initialTopic.progress.currentPage || 1;
+      setPageNumber(savedPage);
+      setCurrentTopicIndex(topicIndex);
     }
-  }, [topics, selectedTopic]);
+  }, [topics, selectedTopic, progressId]);
 
   useEffect(() => {
     if (selectedTopic && selectedTopic.pdfUrl) {
@@ -55,13 +114,6 @@ export default function LearningTopic() {
     }
   }, [selectedTopic, pageNumber]);
 
-  useEffect(() => {
-    if (numPages > 0) {
-      setProgress((pageNumber / numPages) * 100);
-    }
-  }, [pageNumber, numPages]);
-
-  // Add protection against keyboard shortcuts
   useEffect(() => {
     const preventKeyboardShortcuts = (e: KeyboardEvent) => {
       if (
@@ -86,15 +138,13 @@ export default function LearningTopic() {
   const fetchTopics = async () => {
     const userId = (session.data?.user as any)?.id;
     try {
-      const response = await fetch(
-        `/api/learningtopic/${userId}/${progressId}`
-      );
+      const response = await fetch(`/api/learningtopic/${userId}/${progressId}`);
       if (!response.ok) {
-        console.error("Failed to fetch topics:", response.statusText);
-        return;
+        throw new Error('Failed to fetch topics');
       }
       const data = await response.json();
-      console.log("data", data);
+      
+      setLearningTopicData(data.data);
 
       const topicsArray = data.data.userTopics.map((userTopic: any) => {
         const pdfData = data.data.pdfs.find(
@@ -107,23 +157,13 @@ export default function LearningTopic() {
             ? `data:application/pdf;base64,${pdfData.pdf}`
             : null,
           progress: {
-            currentPage: userTopic.currentPage || 1,
-            totalPages: userTopic.topic.pages || 0,
+            currentPage: parseInt(userTopic.currentPage) || 1,
+            totalPages: parseInt(userTopic.topic.pages) || 0,
           },
         };
       });
 
       setTopics(topicsArray);
-
-      const defaultTopic = progressId
-        ? topicsArray.find((t: any) => t.id === progressId)
-        : topicsArray[0];
-
-      if (defaultTopic) {
-        setSelectedTopic(defaultTopic);
-        setPdfUrl(defaultTopic.pdfUrl);
-        setPageNumber(defaultTopic.progress.currentPage);
-      }
     } catch (error) {
       console.error("Error fetching topics:", error);
       setTopics([]);
@@ -210,9 +250,6 @@ export default function LearningTopic() {
   const updateCurrentPage = async (newPage: number) => {
     if (!session.data?.user || !selectedTopic) return;
     const userId = (session.data.user as any).id;
-    console.log("userId", userId);
-    console.log("progressId", progressId);
-    console.log("selectedTopic.id", selectedTopic.id);
 
     try {
       const response = await fetch(
@@ -230,19 +267,42 @@ export default function LearningTopic() {
         throw new Error("Failed to update current page");
       }
 
-      const data = await response.json();
-      console.log("Page update response:", data);
+      // Update topicsProgress
+      setTopicsProgress(prev => ({
+        ...prev,
+        [selectedTopic.id]: newPage
+      }));
 
-      setTopics((prevTopics) =>
-        prevTopics.map((topic) =>
+      // Update topics array
+      setTopics(prevTopics =>
+        prevTopics.map(topic =>
           topic.id === selectedTopic.id
             ? {
                 ...topic,
-                progress: { ...topic.progress, currentPage: newPage },
+                progress: { ...topic.progress, currentPage: newPage }
               }
             : topic
         )
       );
+
+      // Update selected topic
+      setSelectedTopic((prev:any) => ({
+        ...prev,
+        progress: { ...prev.progress, currentPage: newPage }
+      }));
+
+      // Update learning topic context
+      if (setLearningTopicData && learningTopicData) {
+        setLearningTopicData({
+          ...learningTopicData,
+          userTopics: learningTopicData.userTopics.map((userTopic: any) =>
+            userTopic.topic.id === selectedTopic.id
+              ? { ...userTopic, currentPage: newPage }
+              : userTopic
+          ),
+        });
+      }
+
     } catch (error) {
       console.error("Error updating current page:", error);
     }
@@ -253,6 +313,13 @@ export default function LearningTopic() {
       const newPage = pageNumber - 1;
       setPageNumber(newPage);
       updateCurrentPage(newPage);
+    } else if (currentTopicIndex > 0) {
+      // Go to previous topic's last page
+      const prevTopic = topics[currentTopicIndex - 1];
+      setCurrentTopicIndex(currentTopicIndex - 1);
+      handleTopicClick(prevTopic);
+      setPageNumber(prevTopic.progress.totalPages);
+      updateCurrentPage(prevTopic.progress.totalPages);
     }
   };
 
@@ -261,6 +328,13 @@ export default function LearningTopic() {
       const newPage = pageNumber + 1;
       setPageNumber(newPage);
       updateCurrentPage(newPage);
+    } else if (currentTopicIndex < topics.length - 1) {
+      // Go to next topic's first page
+      const nextTopic = topics[currentTopicIndex + 1];
+      setCurrentTopicIndex(currentTopicIndex + 1);
+      handleTopicClick(nextTopic);
+      setPageNumber(1);
+      updateCurrentPage(1);
     }
   };
 
@@ -272,13 +346,18 @@ export default function LearningTopic() {
   const handleTopicClick = (topic: any) => {
     setSelectedTopic(topic);
     setPdfUrl(topic.pdfUrl);
-    setPageNumber(topic.progress.currentPage);
+    const currentPage = topicsProgress[topic.id] || topic.progress.currentPage || 1;
+    setPageNumber(currentPage);
     setNumPages(topic.progress.totalPages || 0);
+    const index = topics.findIndex((t) => t.id === topic.id);
+    setCurrentTopicIndex(index);
   };
 
-  const processTopicsData = (data: any) => {
-    // ... (same as before)
-  };
+  useEffect(() => {
+    if (selectedTopic && selectedTopic.progress.currentPage) {
+      setPageNumber(selectedTopic.progress.currentPage);
+    }
+  }, [selectedTopic]);
 
   return (
     <div
@@ -289,27 +368,41 @@ export default function LearningTopic() {
         <div className="w-full text-center">Loading...</div>
       ) : (
         <>
-          {/* PDF Viewer */}
           <div className="w-3/4 pr-4">
-            <h1 className="text-2xl font-bold mb-4 text-center dark:text-white">
-              Learning Topic
-            </h1>
+            <div className="flex justify-between items-center mb-4">
+              <h1 className="text-2xl font-bold text-center dark:text-white">
+                Learning Topic
+              </h1>
+              <button
+                className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded"
+                onClick={goToFirstPage}
+              >
+                Back to Start
+              </button>
+            </div>
+            
             {selectedTopic && (
               <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">
                 Topic: {selectedTopic.title}
               </p>
             )}
 
-            {/* Progress bar */}
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
-              <div
-                className="bg-blue-600 dark:bg-blue-400 h-2.5 rounded-full"
-                style={{ width: `${progress}%` }}
-              ></div>
+            <div className="mb-6">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium dark:text-white">Overall Progress</span>
+                <span className="text-sm font-medium dark:text-white">{progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {topics.reduce((sum, topic) => sum + (topicsProgress[topic.id] || topic.progress.currentPage || 1), 0)} of {' '}
+                {topics.reduce((sum, topic) => sum + topic.progress.totalPages, 0)} pages completed
+              </div>
             </div>
-            <p className="text-center mb-4 dark:text-white">
-              Progress: {Math.round(progress)}%
-            </p>
 
             {pdfUrl ? (
               <div
@@ -331,7 +424,7 @@ export default function LearningTopic() {
                 <div className="flex justify-between mt-4 w-full max-w-md">
                   <button
                     className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
-                    disabled={pageNumber <= 1}
+                    disabled={pageNumber <= 1 && currentTopicIndex === 0}
                     onClick={goToPrevPage}
                   >
                     Previous
@@ -341,16 +434,10 @@ export default function LearningTopic() {
                   </span>
                   <button
                     className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
-                    disabled={pageNumber >= numPages}
+                    disabled={pageNumber >= numPages && currentTopicIndex === topics.length - 1}
                     onClick={goToNextPage}
                   >
                     Next
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded"
-                    onClick={goToFirstPage}
-                  >
-                    Back to Start
                   </button>
                 </div>
               </div>
@@ -361,12 +448,11 @@ export default function LearningTopic() {
             )}
           </div>
 
-          {/* Topics sidebar */}
           <div className="w-1/4 pl-4 border-l border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold mb-4 dark:text-white">Topics</h2>
             {Array.isArray(topics) && topics.length > 0 ? (
               <ul>
-                {topics.map((topic) => (
+                {topics.map((topic, index) => (
                   <li
                     key={topic.id}
                     className={`cursor-pointer p-2 mb-2 rounded transition-colors duration-200
@@ -379,8 +465,16 @@ export default function LearningTopic() {
                   >
                     <div className="dark:text-white">{topic.title}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Page {topic.progress.currentPage} /{" "}
-                      {topic.progress.totalPages || "?"}
+                      Page {topic.progress.currentPage} of {topic.progress.totalPages}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {index < currentTopicIndex ? (
+                        <span className="text-green-500">Completed</span>
+                      ) : index === currentTopicIndex ? (
+                        <span className="text-blue-500">In Progress</span>
+                      ) : (
+                        <span>Not Started</span>
+                      )}
                     </div>
                   </li>
                 ))}

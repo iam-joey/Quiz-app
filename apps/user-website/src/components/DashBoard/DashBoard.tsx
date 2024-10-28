@@ -52,6 +52,7 @@ export default function Home() {
   useEffect(() => {
     setTestData(null);
     setSimulationTestData(null);
+    setLearningTopicData(null);
 
     // // Clear all test-related data from local storage
     // Object.keys(localStorage).forEach(key => {
@@ -252,7 +253,14 @@ export default function Home() {
       const result = await response.json();
 
       if (result.data.new) {
-        setLearningTopicData(result.data);
+        // Store the data in context only
+        const processedData = {
+          ...result.data,
+          pdfs: result.data.pdfs,
+          userTopics: result.data.userTopics
+        };
+        setLearningTopicData(processedData);
+        
         router.push(`/learningTopic/${result.data.id}`);
         toast.success(`Started study for ${selectedTopics.length} topic(s)`);
       } else {
