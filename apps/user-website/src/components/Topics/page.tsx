@@ -125,7 +125,18 @@ export default function Topics() {
     setIsResettingStudy(true);
 
     try {
-      // Use learningTopicData instead of setLearningTopicData
+      // Create a deep copy of the learning topic data
+      const updatedLearningTopicData = JSON.parse(JSON.stringify(learningTopicData));
+      
+      // Update the current page to 1 for all topics in the context
+      if (updatedLearningTopicData?.userTopics) {
+        updatedLearningTopicData.userTopics = updatedLearningTopicData.userTopics.map((userTopic: any) => ({
+          ...userTopic,
+          currentPage: 1
+        }));
+      }
+
+      // Update the API
       const resetPromises = (learningTopicData as any).userTopics.map(async (userTopic: any) => {
         const resetResponse = await fetch(`/api/updatecurrentpage/${userId}/${existingProgressId}/${userTopic.topic.id}`, {
           method: 'POST',
@@ -141,6 +152,9 @@ export default function Topics() {
       });
 
       await Promise.all(resetPromises);
+
+      // Update the context with the reset data
+      setLearningTopicData(updatedLearningTopicData);
 
       router.push(`/learningTopic/${existingProgressId}`);
       toast.success(`Started new study for ${selectedTopics.length} topic(s)`);
