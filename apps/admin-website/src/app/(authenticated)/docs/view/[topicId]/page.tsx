@@ -7,19 +7,16 @@ import { Loader2, Maximize2, Minimize2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-export default function PDFViewer({
+export default function SimplePDFViewer({
   params,
 }: {
-  params: {
-    topicId: string;
-  };
+  params: { topicId: string };
 }) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const pdfContainerRef = useRef<HTMLDivElement>(null);
   const topicId = params.topicId as string;
   const router = useRouter();
 
@@ -54,20 +51,9 @@ export default function PDFViewer({
     };
   }, [topicId]);
 
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    const object = document.querySelector("object") as HTMLObjectElement;
-    if (iframe && pdfUrl) {
-      iframe.src = `${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`;
-    }
-    if (object && pdfUrl) {
-      object.data = `${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`;
-    }
-  }, [pdfUrl]);
-
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
-      pdfContainerRef.current?.requestFullscreen();
+      iframeRef.current?.requestFullscreen();
       setIsFullScreen(true);
     } else {
       if (document.exitFullscreen) {
@@ -98,8 +84,8 @@ export default function PDFViewer({
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
-      <Card className="w-full h-screen">
-        <CardContent className="p-0 h-full relative" ref={pdfContainerRef}>
+      <Card className="w-full h-[calc(100vh-8rem)]">
+        <CardContent className="p-0 h-full relative">
           {loading ? (
             <div className="flex justify-center items-center h-full">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -112,23 +98,10 @@ export default function PDFViewer({
             <>
               <iframe
                 ref={iframeRef}
+                src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
                 className="w-full h-full border-none"
                 title="PDF Viewer"
-                sandbox="allow-scripts allow-forms allow-popups allow-top-navigation"
               />
-              <object
-                data={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
-                type="application/pdf"
-                className="w-full h-full absolute top-0 left-0"
-              >
-                <p>
-                  Your browser doesn't support PDF viewing. Please{" "}
-                  <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                    download the PDF
-                  </a>{" "}
-                  to view it.
-                </p>
-              </object>
               <Button
                 className="absolute top-2 right-2 z-10"
                 variant="outline"
