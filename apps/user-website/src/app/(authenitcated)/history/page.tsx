@@ -11,6 +11,8 @@ import {
   ClipboardList,
   User,
   Medal,
+  BookOpen,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
@@ -40,6 +42,19 @@ type NormalTest = {
   numberOfQuestions: number;
   testType: "TIMER" | "NOTIMER";
   createdAt: string;
+};
+type LearningHistoryItem = {
+  id: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  userTopics: {
+    topic: {
+      id: string;
+      name: string;
+      pages: number;
+    };
+  }[];
 };
 
 type SimulationTest = {
@@ -120,6 +135,12 @@ export default function TestList() {
   const [showTestHistory, setShowTestHistory] = useState(false);
   const session = useSession();
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [showLearningHistory, setShowLearningHistory] = useState(false);
+  const [learningHistory, setLearningHistory] = useState<LearningHistoryItem[]>(
+    []
+  );
+  const [isLoadingLearningHistory, setIsLoadingLearningHistory] =
+    useState(false);
 
   const handleTestClick = (
     testId: string,
@@ -131,6 +152,39 @@ export default function TestList() {
       return;
     }
     router.push(`/test/${testId}?type=${testType}`);
+  };
+
+  const fetchLearningHistory = async () => {
+    setIsLoadingLearningHistory(true);
+    const loadingId = toast.loading("Loading learning history...");
+    try {
+      const userId = (session.data?.user as any)?.id;
+      if (!userId) {
+        toast.dismiss(loadingId);
+        toast.error("User not authenticated");
+        return;
+      }
+
+      const response = await fetch(`/api/learninghistory/${userId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch learning history");
+      }
+
+      const result = await response.json();
+      if (result.error) {
+        throw new Error(result.message);
+      }
+
+      setLearningHistory(result.data);
+      toast.dismiss(loadingId);
+      toast.success("Learning history loaded successfully");
+    } catch (error) {
+      toast.dismiss(loadingId);
+      toast.error("An error occurred while fetching learning history");
+      console.error("Error fetching learning history:", error);
+    } finally {
+      setIsLoadingLearningHistory(false);
+    }
   };
 
   const fetchData = async () => {
@@ -221,9 +275,12 @@ export default function TestList() {
       fetchData();
       fetchStats();
       fetchLeaderboard();
+      fetchLearningHistory();
     }
   }, [session.data?.user?.id]);
-
+  const handleTopicClick = (topicId: string) => {
+    router.push(`/learningTopic/${topicId}`);
+  };
   return (
     <div className="container mx-auto p-4 space-y-8">
       <motion.div
@@ -515,6 +572,106 @@ export default function TestList() {
                         You haven't participated in any tests yet.
                       </p>
                     )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+      >
+        <Card className="bg-slate-800">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold flex items-center">
+                <BookOpen className="mr-2" /> Learning History
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLearningHistory(!showLearningHistory)}
+                className="transition-all duration-300 ease-in-out transform hover:scale-105"
+              >
+                {showLearningHistory ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <AnimatePresence>
+              {showLearningHistory && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {isLoadingLearningHistory ? (
+                    <div className="flex items-center justify-center h-32">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  ) : learningHistory.length > 0 ? (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                      {learningHistory.map((item, index) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 }}
+                        >
+                          <Card className="hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden border-2 border-primary/10">
+                            <CardContent className="p-6">
+                              <div className="flex justify-between items-start mb-4">
+                                <h3 className="font-semibold text-lg text-primary">
+                                  Learning Session
+                                </h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  In Progress
+                                </Badge>
+                              </div>
+                              <div className="space-y-3">
+                                {item.userTopics.map((userTopic) => (
+                                  <div
+                                    key={userTopic.topic.id}
+                                    className="text-sm text-gray-700 dark:text-gray-300 flex items-center"
+                                  >
+                                    <BookOpen className="w-4 h-4 mr-2 text-primary" />
+                                    {userTopic.topic.name} (
+                                    {userTopic.topic.pages} pages)
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="flex justify-end mt-6">
+                                <Button
+                                  onClick={() => handleTopicClick(item.id)}
+                                  variant="default"
+                                  size="sm"
+                                  className="text-sm font-semibold transition-all duration-300 ease-in-out transform hover:scale-105"
+                                >
+                                  Continue Reading
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <motion.p
+                      className="text-center text-lg text-gray-600 dark:text-gray-400"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      You haven't started any learning topics yet.
+                    </motion.p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
