@@ -8,38 +8,38 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(uuid()) @unique
-  name              String   
-  studyProgram      Program?
-  speciality        String?
-  workPlace         String?
-  university        String?
-  promotion         String?
-  profileCompleted  Boolean   @default(false)
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  accounts          Account[]
-  sessions          Session[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  UserTestDetail UserTestDetail[]
+  id                   String                 @id @unique @default(uuid())
+  name                 String
+  studyProgram         Program?
+  speciality           String?
+  workPlace            String?
+  university           String?
+  promotion            String?
+  profileCompleted     Boolean                @default(false)
+  email                String?                @unique
+  emailVerified        DateTime?              @map("email_verified")
+  image                String?
+  accounts             Account[]
+  sessions             Session[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  UserTestDetail       UserTestDetail[]
+  SimulationTestDetail SimulationTestDetail[]
+  Flag                 Flag[]
+  UserLearningHistory  UserLearningHistory[]
 
   @@index([id])
-  SimulationTestDetail SimulationTestDetail[]
-  Flag Flag[]
-  UserLearningHistory UserLearningHistory[]
 }
 
 model Admin {
-    id                String    @id @default(uuid()) @unique
-    email             String    @unique
-    password          String
-    name              String?
-    createdAt         DateTime  @default(now())
-    updatedAt         DateTime  @updatedAt
+  id        String   @id @unique @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@index([id])
+  @@index([id])
 }
 
 enum Program {
@@ -49,38 +49,41 @@ enum Program {
 }
 
 model Category {
-  id              String    @id @default(uuid()) @unique
-  name            String    @unique
-  question        Question[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  UserTestDetail UserTestDetail[]
-  deleted         Boolean   @default(false)
-  @@index([id])
+  id                   String                 @id @unique @default(uuid())
+  name                 String                 @unique
+  question             Question[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  prevTopic         Boolean          @default(false)
+  UserTestDetail       UserTestDetail[]
+  deleted              Boolean                @default(false)
   SimulationTestDetail SimulationTestDetail[]
+
+  @@index([id])
 }
 
 
+
 model Question {
-  id                String    @id @default(uuid()) @unique
-  title             String
-  categoryId        String
-  question          String
-  level             Level     @default(EASY)
-  choice            Choices[]
-  answer            String[]
-  isMultipleAnswer  Boolean   @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  category          Category  @relation(fields: [categoryId], references: [id])
-  UserTestDetail UserTestDetail[]
-  SimulationSingle    SimulationTestDetail[] @relation("SingleQuestionSimulation")
-  SimulationMultiple  SimulationTestDetail[] @relation("MultipleQuestionSimulation")
+  id                    String                  @id @unique @default(uuid())
+  title                 String
+  categoryId            String
+  question              String
+  level                 Level                   @default(EASY)
+  choice                Choices[]
+  answer                String[]
+  isMultipleAnswer      Boolean                 @default(false)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  category              Category                @relation(fields: [categoryId], references: [id])
+  UserTestDetail        UserTestDetail[]
+  SimulationSingle      SimulationTestDetail[]  @relation("SingleQuestionSimulation")
+  SimulationMultiple    SimulationTestDetail[]  @relation("MultipleQuestionSimulation")
+  Flag                  Flag[]
 
   @@index([id])
   @@index([isMultipleAnswer])
   @@index([categoryId])
-  Flag Flag[]
 }
 
 enum Level {
@@ -90,24 +93,24 @@ enum Level {
 }
 
 model UserTestDetail {
-  id                 String    @id @default(cuid()) @unique
-  userId             String
-  question           Question[]
-  userAnswers        Json?
-  isTimed            Boolean   @default(false)
-  duration           Int?
-  numberOfQuestions  Int
-  isCompleted        Boolean   @default(false)
-  categoryId         String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  testType           TestType
-  score              Float?    // Percentage score
-  correctAnswers     Int?      // Number of correct answers
-  incorrectAnswers   Int?      // Number of incorrect answers
-  totalTimeTaken     Int?      // Total time taken (in seconds)
-  accuracy           Float?    // Accuracy rate
-  percentage         Int       @default(0) // Percentage score
+  id                String     @id @unique @default(cuid())
+  userId            String
+  question          Question[]
+  userAnswers       Json?
+  isTimed           Boolean    @default(false)
+  duration          Int?
+  numberOfQuestions Int
+  isCompleted       Boolean    @default(false)
+  categoryId        String
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  testType          TestType
+  score             Float? // Percentage score
+  correctAnswers    Int? // Number of correct answers
+  incorrectAnswers  Int? // Number of incorrect answers
+  totalTimeTaken    Int? // Total time taken (in seconds)
+  accuracy          Float? // Accuracy rate
+  percentage        Int        @default(0) // Percentage score
 
   category Category @relation(fields: [categoryId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
@@ -116,138 +119,136 @@ model UserTestDetail {
   @@index([userId])
 }
 
+model SimulationTestDetail {
+  id                String     @id @unique @default(cuid())
+  userId            String
+  singleQuestion    Question[] @relation("SingleQuestionSimulation")
+  multipleQuestion  Question[] @relation("MultipleQuestionSimulation")
+  userAnswers       Json?
+  isCompleted       Boolean    @default(false)
+  duration          Int?
+  numberOfQuestions Int
+  testType          TestType   @default(SIMULATION)
+  categoryId        String?
+  score             Float? // Percentage score
+  correctAnswers    Int? // Number of correct answers
+  incorrectAnswers  Int? // Number of incorrect answers
+  totalTimeTaken    Int? // Total time taken (in seconds)
+  accuracy          Float? // Accuracy rate
+  percentage        Int        @default(0) // Percentage score
 
-model SimulationTestDetail{
-    id                 String    @id @default(cuid()) @unique
-    userId             String
-    singleQuestion   Question[] @relation("SingleQuestionSimulation")
-    multipleQuestion Question[] @relation("MultipleQuestionSimulation")
-    userAnswers        Json?
-    isCompleted        Boolean   @default(false)
-    duration           Int?
-    numberOfQuestions  Int
-    testType           TestType @default(SIMULATION)
-    categoryId         String?
-    score              Float?    // Percentage score
-    correctAnswers     Int?      // Number of correct answers
-    incorrectAnswers   Int?      // Number of incorrect answers
-    totalTimeTaken     Int?      // Total time taken (in seconds)
-    accuracy           Float?    // Accuracy rate
-    percentage         Int       @default(0) // Percentage score
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  user                  User                    @relation(fields: [userId], references: [id])
+  category              Category?               @relation(fields: [categoryId], references: [id])
 
-    createdAt         DateTime  @default(now())
-    updatedAt         DateTime  @updatedAt
-  user     User     @relation(fields: [userId], references: [id])
-  category Category? @relation(fields: [categoryId], references: [id])
-
-    @@index([id,userId])
+  @@index([id, userId])
 }
-
 
 model Choices {
-  id              String    @id @default(uuid()) @unique
-  questionId      String
-  text            String    
-  question        Question   @relation(fields: [questionId], references: [id],onDelete: Cascade)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id         String   @id @unique @default(uuid())
+  questionId String
+  text       String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([id])
 }
 
-model Flag{
-  id              String    @id @default(uuid()) @unique
-  questionId      String
-  userId          String
-  description     String
-  resolved        Boolean   @default(false)
-  comment         String?
-  question        Question   @relation(fields: [questionId], references: [id],onDelete: Cascade)
-  user            User       @relation(fields: [userId], references: [id],onDelete: Cascade)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+model Flag {
+  id          String   @id @unique @default(uuid())
+  questionId  String
+  userId      String
+  description String
+  resolved    Boolean  @default(false)
+  comment     String?
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([id])
 }
 
-enum TestType{
+enum TestType {
   TIMER
   NOTIMER
   SIMULATION
 }
 
 model Topic {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  pages       Int       @default(0)
+  id          String   @id @default(uuid())
+  name        String   @unique
+  pages       Int      @default(0)
   docfileName String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   UserLearningTopicIdsDetails UserLearningTopicIdsDetails[]
 }
 
 model UserLearningHistory {
-  id          String                       @id @default(uuid())
-  userId      String
-  userTopics  UserLearningTopicIdsDetails[]
-  createdAt   DateTime                     @default(now())
-  updatedAt   DateTime                     @updatedAt @default(now())
+  id         String                        @id @default(uuid())
+  userId     String
+  userTopics UserLearningTopicIdsDetails[]
+  createdAt  DateTime                      @default(now())
+  updatedAt  DateTime                      @default(now()) @updatedAt
 
-  user        User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([id])
   @@index([userId])
 }
 
 model UserLearningTopicIdsDetails {
-  id                    String               @id @default(uuid())
-  userId                String
-  topicId               String
-  currentPage           Int                  @default(0)
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt @default(now())
-  
-  learningHistories     UserLearningHistory[]
-  topic                 Topic                @relation(fields: [topicId], references: [id])
-  @@index([id,topicId,userId])
+  id          String   @id @default(uuid())
+  userId      String
+  topicId     String
+  currentPage Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  learningHistories UserLearningHistory[]
+  topic             Topic                 @relation(fields: [topicId], references: [id])
+
+  @@index([id, topicId, userId])
 }
 
-
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String  @map("user_id")
-  type               String
-  provider           String
-  providerAccountId  String  @map("provider_account_id")
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-  
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
- 
+
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique @map("session_token")
   userId       String   @map("user_id")
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@map("sessions")
 }
-
 
 model VerificationToken {
   identifier String
   token      String
   expires    DateTime
- 
+
   @@unique([identifier, token])
 }

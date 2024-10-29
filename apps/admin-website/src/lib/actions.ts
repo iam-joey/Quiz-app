@@ -20,7 +20,7 @@ export async function createAdmin(email: string, pwd: string) {
   }
 }
 
-export async function createTopic(formdata: FormData) {
+export async function createTopic(formdata: FormData, isPrev?: boolean) {
   try {
     let TopicName = formdata.get("topicName") as string;
     const name = TopicName.trim().replace(/\s+/g, "_").toLowerCase();
@@ -41,12 +41,13 @@ export async function createTopic(formdata: FormData) {
       return {
         err: true,
         data: null,
-        msg: "Topic already present",
+        msg: "category already present",
       };
     }
     const data = await prisma.category.create({
       data: {
         name: TopicName,
+        prevTopic: isPrev ? true : false,
       },
     });
     revalidatePath("/");
@@ -71,6 +72,7 @@ export async function getTopics() {
     },
     where: {
       deleted: false,
+      prevTopic: false,
     },
   });
   return {
@@ -78,6 +80,29 @@ export async function getTopics() {
     msg: "All good",
     data,
   };
+}
+
+export async function getPrevTopics() {
+  try {
+    const data = await prisma.category.findMany({
+      where: {
+        prevTopic: true,
+        deleted: false,
+      },
+    });
+    return {
+      err: false,
+      msg: "All good",
+      data,
+    };
+  } catch (error) {
+    console.error("Error fetching previous topics:", error);
+    return {
+      err: true,
+      msg: "Failed to fetch previous topics",
+      data: null,
+    };
+  }
 }
 
 export async function getQuestionsRange(

@@ -255,7 +255,7 @@ export default function QuestionEditor({
               </li>
             ))}
           </ul>
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="paragraph">Paragraph:</Label>
             {isEditing ? (
               <div className="border rounded-md">
@@ -273,7 +273,7 @@ export default function QuestionEditor({
                 dangerouslySetInnerHTML={{ __html: questionData.paragraph }}
               />
             )}
-          </div>
+          </div> */}
         </CardContent>
         <CardFooter className="flex justify-end space-x-2 pt-6">
           {isEditing ? (

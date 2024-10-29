@@ -9,7 +9,8 @@ export const POST = async (req: NextRequest) => {
   try {
     const data = await req.json();
     const testSchema = await UserTestDetailSchema.safeParse(data);
-
+    const isPrevTopic = req.nextUrl.searchParams.get("isPrevTopic") === "true";
+    console.log("asdasdasdsad", isPrevTopic);
     if (!testSchema.success) {
       return NextResponse.json({
         msg: testSchema.error.format(),
@@ -137,6 +138,113 @@ export const POST = async (req: NextRequest) => {
     };
 
     if (testDetails.testType === "SIMULATION") {
+      if (isPrevTopic) {
+        const singleAnswerQuestions = await prisma.question.findMany({
+          where: {
+            isMultipleAnswer: false,
+            category: { deleted: false, id: testDetails.categoryId },
+          },
+          take: 50,
+          select: {
+            id: true,
+            title: true,
+            choice: { select: { id: true, text: true } },
+            level: true,
+          },
+        });
+        const multipleAnswerQuestions = await prisma.question.findMany({
+          where: {
+            isMultipleAnswer: true,
+            category: { deleted: false, id: testDetails.categoryId },
+          },
+          take: 150,
+          select: {
+            id: true,
+            title: true,
+            choice: { select: { id: true, text: true } },
+            level: true,
+          },
+        });
+
+        if (
+          singleAnswerQuestions.length < 50 ||
+          multipleAnswerQuestions.length < 150
+        ) {
+          return NextResponse.json({
+            msg: "Insufficient questions available for a SIMULATION test",
+            err: true,
+            data: null,
+          });
+        }
+
+        const simulationTestDetail = await prisma.simulationTestDetail.create({
+          data: {
+            userId: testDetails.userId,
+            duration: testDetails.duration,
+            isCompleted: false,
+            testType: testDetails.testType,
+            numberOfQuestions:
+              singleAnswerQuestions.length + multipleAnswerQuestions.length,
+            singleQuestion: {
+              connect: singleAnswerQuestions.map((q) => ({ id: q.id })),
+            },
+            multipleQuestion: {
+              connect: multipleAnswerQuestions.map((q) => ({ id: q.id })),
+            },
+          },
+          select: {
+            id: true,
+            singleQuestion: {
+              select: {
+                id: true,
+                title: true,
+                choice: { select: { id: true, text: true } },
+                level: true,
+              },
+            },
+            multipleQuestion: {
+              select: {
+                id: true,
+                title: true,
+                choice: { select: { id: true, text: true } },
+                level: true,
+              },
+            },
+            testType: true,
+            createdAt: true,
+            duration: true,
+          },
+        });
+
+        responseData = {
+          id: simulationTestDetail.id,
+          singleQuestion: simulationTestDetail.singleQuestion.map(
+            ({ id, title, choice, level }) => ({
+              questionId: id,
+              title,
+              level,
+              choice: choice.map(({ id, text }) => ({ id, text })),
+            })
+          ),
+          multipleQuestion: simulationTestDetail.multipleQuestion.map(
+            ({ id, title, choice, level }) => ({
+              questionId: id,
+              title,
+              level,
+              choice: choice.map(({ id, text }) => ({ id, text })),
+            })
+          ),
+          testType: simulationTestDetail.testType,
+          createdAt: simulationTestDetail.createdAt,
+          duration: simulationTestDetail.duration,
+        };
+
+        return NextResponse.json({
+          msg: "SIMULATION test created successfully",
+          err: false,
+          data: responseData,
+        });
+      }
       const singleAnswerQuestions = await prisma.question.findMany({
         where: { isMultipleAnswer: false, category: { deleted: false } },
         take: 50,

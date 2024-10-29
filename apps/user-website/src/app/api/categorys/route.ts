@@ -2,12 +2,16 @@ import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+///api/categorys?isPrevTopic=true
 
 export const GET = async (req: NextRequest) => {
   try {
+    const isPrevTopic = req.nextUrl.searchParams.get("isPrevTopic") === "true";
+    console.log(isPrevTopic);
     const data = await prisma.category.findMany({
       where: {
         deleted: false,
+        prevTopic: isPrevTopic,
       },
       select: {
         id: true,

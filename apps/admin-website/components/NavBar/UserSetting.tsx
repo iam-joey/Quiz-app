@@ -73,6 +73,14 @@ export function UserSetting() {
             >
               Docs
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                router.push("/prev");
+              }}
+            >
+              Previous papers
+            </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
