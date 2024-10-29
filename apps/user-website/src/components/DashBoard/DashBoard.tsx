@@ -53,8 +53,10 @@ export default function Home() {
   const [isResettingStudy, setIsResettingStudy] = useState(false);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const { learningTopicData, setLearningTopicData } = useLearningTopic();
-  const [showPreviousPapersDialog, setShowPreviousPapersDialog] = useState(false);
-  const [selectedPreviousPaperCategory, setSelectedPreviousPaperCategory] = useState<string | null>(null);
+  const [showPreviousPapersDialog, setShowPreviousPapersDialog] =
+    useState(false);
+  const [selectedPreviousPaperCategory, setSelectedPreviousPaperCategory] =
+    useState<string | null>(null);
   const [previousPapersSearchTerm, setPreviousPapersSearchTerm] = useState("");
   const [previousPapersCategories, setPreviousPapersCategories] = useState<
     Array<{ id: string; name: string; questionCount: number }>
@@ -367,8 +369,11 @@ export default function Home() {
     }
   }, [showPreviousPapersDialog]);
 
-  const filteredPreviousPapersCategories = previousPapersCategories.filter((category) =>
-    category.name.toLowerCase().includes(previousPapersSearchTerm.toLowerCase())
+  const filteredPreviousPapersCategories = previousPapersCategories.filter(
+    (category) =>
+      category.name
+        .toLowerCase()
+        .includes(previousPapersSearchTerm.toLowerCase())
   );
 
   const startPreviousPaperTest = async () => {
@@ -376,7 +381,7 @@ export default function Home() {
 
     // Find the selected category to get its questionCount
     const selectedCategory = previousPapersCategories.find(
-      category => category.id === selectedPreviousPaperCategory
+      (category) => category.id === selectedPreviousPaperCategory
     );
 
     if (!selectedCategory) {
@@ -392,7 +397,7 @@ export default function Home() {
       duration: 4 * 3600, // 4 hours
       numberOfQuestions: selectedCategory.questionCount, // Use actual question count
       categoryId: selectedPreviousPaperCategory,
-      testType: "SIMULATION"
+      testType: "SIMULATION",
     };
 
     console.log("testConfig", testConfig);
@@ -408,26 +413,28 @@ export default function Home() {
       });
 
       // console.log("response", response);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.msg || "Failed to create test. Please try again.");
+        throw new Error(
+          errorData.msg || "Failed to create test. Please try again."
+        );
       }
 
       const testData = await response.json();
-      const data= testData.data;
+      const data = testData.data;
       console.log("testData", data);
       const testDataWithIsCompleted = { ...data, isCompleted: false };
-        
-        setSimulationTestData(testDataWithIsCompleted);
-        localStorage.setItem(
-          `simulationTestData_${data.id}`,
-          JSON.stringify(testDataWithIsCompleted)
-        );
-        
-        router.push(`/test/${data.id}?type=SIMULATION`);
+
+      setSimulationTestData(testDataWithIsCompleted);
+      localStorage.setItem(
+        `simulationTestData_${data.id}`,
+        JSON.stringify(testDataWithIsCompleted)
+      );
+
+      router.push(`/test/${data.id}?type=SIMULATION`);
     } catch (error) {
-      console.error("Error creating test:", error); 
+      console.error("Error creating test:", error);
       toast.error("An error occurred. Please try again.");
     } finally {
       setIsStartingTest(false);
@@ -571,7 +578,7 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            {/* <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
                 <svg
                   className="w-6 h-6 text-yellow-500 mr-2"
@@ -598,7 +605,7 @@ export default function Home() {
               >
                 View History
               </button>
-            </div>
+            </div> */}
           </div>
         )}
       </div>
@@ -729,8 +736,10 @@ export default function Home() {
                   </svg>
                   Starting Exam Simulation...
                 </span>
+              ) : selectedCategory === "previous_papers" ? (
+                "Next"
               ) : (
-                selectedCategory === "previous_papers" ? "Next" : "Start"
+                "Start"
               )}
             </button>
           </div>

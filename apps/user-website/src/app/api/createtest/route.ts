@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const redisCache = RedisCache.getInstance();
 
-//api/createtest/
+//api/createtest/a
 export const POST = async (req: NextRequest) => {
   try {
     const data = await req.json();
@@ -20,17 +20,14 @@ export const POST = async (req: NextRequest) => {
         data: null,
       });
     }
-
     const testDetails = testSchema.data;
     let responseData;
-
     const calculateQuestionDistribution = (totalQuestions: number) => {
       const easyQuestions = Math.ceil(totalQuestions * 0.4);
       const mediumQuestions = Math.ceil(totalQuestions * 0.4);
       const hardQuestions = totalQuestions - (easyQuestions + mediumQuestions);
       return { easyQuestions, mediumQuestions, hardQuestions };
     };
-
     const fetchQuestions = async (
       categoryId: string,
       numberOfQuestions: number
@@ -138,7 +135,6 @@ export const POST = async (req: NextRequest) => {
       await redisCache.set(cacheKey, selectedQuestions);
       return selectedQuestions;
     };
-
     if (testDetails.testType === "SIMULATION") {
       console.log("isPrevTopic", isPrevTopic);
       console.log("testDetails", testDetails);
