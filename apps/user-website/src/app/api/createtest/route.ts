@@ -5,12 +5,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 const redisCache = RedisCache.getInstance();
 
+//api/createtest/
 export const POST = async (req: NextRequest) => {
   try {
     const data = await req.json();
     const testSchema = await UserTestDetailSchema.safeParse(data);
     const isPrevTopic = req.nextUrl.searchParams.get("isPrevTopic") === "true";
     console.log("asdasdasdsad", isPrevTopic);
+    console.log("data", data);
     if (!testSchema.success) {
       return NextResponse.json({
         msg: testSchema.error.format(),
@@ -138,7 +140,11 @@ export const POST = async (req: NextRequest) => {
     };
 
     if (testDetails.testType === "SIMULATION") {
+      console.log("isPrevTopic", isPrevTopic);
+      console.log("testDetails", testDetails);
       if (isPrevTopic) {
+        console.log("isPrevTopic", isPrevTopic);
+        console.log("In prev topic");
         const singleAnswerQuestions = await prisma.question.findMany({
           where: {
             isMultipleAnswer: false,
@@ -152,6 +158,7 @@ export const POST = async (req: NextRequest) => {
             level: true,
           },
         });
+        console.log("singleAnswerQuestions", singleAnswerQuestions.length);
         const multipleAnswerQuestions = await prisma.question.findMany({
           where: {
             isMultipleAnswer: true,
@@ -165,7 +172,7 @@ export const POST = async (req: NextRequest) => {
             level: true,
           },
         });
-
+        console.log("multipleAnswerQuestions", multipleAnswerQuestions.length);
         if (
           singleAnswerQuestions.length < 50 ||
           multipleAnswerQuestions.length < 150
