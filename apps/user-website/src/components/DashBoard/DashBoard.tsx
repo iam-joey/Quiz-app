@@ -7,7 +7,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useTestContext } from "@/components/context/TestContext";
 import { useSimulationTestContext } from "@/components/context/SimulationTestContext";
-import { useLearningTopic } from '@/components/context/LearningTopicContext';
+import { useLearningTopic } from "@/components/context/LearningTopicContext";
 
 export default function Home() {
   const router = useRouter();
@@ -40,11 +40,16 @@ export default function Home() {
   const { setSimulationTestData } = useSimulationTestContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [maxQuestionCount, setMaxQuestionCount] = useState<number | null>(null);
-  const [showLearningTopicsDialog, setShowLearningTopicsDialog] = useState(false);
-  const [topics, setTopics] = useState<Array<{ id: string; name: string; pages: number }>>([]);
+  const [showLearningTopicsDialog, setShowLearningTopicsDialog] =
+    useState(false);
+  const [topics, setTopics] = useState<
+    Array<{ id: string; name: string; pages: number }>
+  >([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
-  const [existingProgressId, setExistingProgressId] = useState<string | null>(null);
+  const [existingProgressId, setExistingProgressId] = useState<string | null>(
+    null
+  );
   const [isResettingStudy, setIsResettingStudy] = useState(false);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const { learningTopicData, setLearningTopicData } = useLearningTopic();
@@ -214,9 +219,9 @@ export default function Home() {
   );
 
   const toggleTopic = (topicId: string) => {
-    setSelectedTopics(prev => 
-      prev.includes(topicId) 
-        ? prev.filter(id => id !== topicId)
+    setSelectedTopics((prev) =>
+      prev.includes(topicId)
+        ? prev.filter((id) => id !== topicId)
         : [...prev, topicId]
     );
   };
@@ -225,7 +230,7 @@ export default function Home() {
     if (selectedTopics.length === filteredTopics.length) {
       setSelectedTopics([]);
     } else {
-      setSelectedTopics(filteredTopics.map(topic => topic.id));
+      setSelectedTopics(filteredTopics.map((topic) => topic.id));
     }
   };
 
@@ -257,7 +262,7 @@ export default function Home() {
         console.log("result.data", result.data);
         // Store the complete response data in context
         setLearningTopicData(result.data);
-        
+
         router.push(`/learningTopic/${result.data.id}`);
         toast.success(`Started study for ${selectedTopics.length} topic(s)`);
       } else {
@@ -294,26 +299,33 @@ export default function Home() {
 
     try {
       // Use learningTopicData instead of setLearningTopicData
-      const resetPromises = (learningTopicData as any).userTopics.map(async (userTopic: any) => {
-        const resetResponse = await fetch(`/api/updatecurrentpage/${userId}/${existingProgressId}/${userTopic.topic.id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ page: 1 }),
-        });
+      const resetPromises = (learningTopicData as any).userTopics.map(
+        async (userTopic: any) => {
+          const resetResponse = await fetch(
+            `/api/updatecurrentpage/${userId}/${existingProgressId}/${userTopic.topic.id}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ page: 1 }),
+            }
+          );
 
-        if (!resetResponse.ok) {
-          throw new Error(`Failed to reset progress for topic ${userTopic.topic.id}`);
+          if (!resetResponse.ok) {
+            throw new Error(
+              `Failed to reset progress for topic ${userTopic.topic.id}`
+            );
+          }
         }
-      });
+      );
 
       await Promise.all(resetPromises);
 
       router.push(`/learningTopic/${existingProgressId}`);
       toast.success(`Started new study for ${selectedTopics.length} topic(s)`);
     } catch (error) {
-      console.error('Error resetting study progress:', error);
+      console.error("Error resetting study progress:", error);
       toast.error("An error occurred while resetting study progress");
     } finally {
       setIsResettingStudy(false);
@@ -414,10 +426,10 @@ export default function Home() {
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <h2 className="text-xl font-semibold">Test history</h2>
+                <h2 className="text-xl font-semibold">Stats & Test history</h2>
               </div>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                View past test results
+                View stats and past test results
               </p>
               <button
                 onClick={() => {
@@ -1188,7 +1200,9 @@ export default function Home() {
                       : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
                   }`}
                 >
-                  <span>{topic.name} ({topic.pages} pages)</span>
+                  <span>
+                    {topic.name} ({topic.pages} pages)
+                  </span>
                   {selectedTopics.includes(topic.id) && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1219,9 +1233,25 @@ export default function Home() {
             >
               {isStartingStudy ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Starting Study...
                 </>
@@ -1240,7 +1270,8 @@ export default function Home() {
               Existing Study Session Found
             </h2>
             <p className="mb-6 text-center text-gray-600 dark:text-gray-300">
-              Do you want to continue the existing study or start from the beginning?
+              Do you want to continue the existing study or start from the
+              beginning?
             </p>
             <div className="flex justify-center space-x-4">
               <button
@@ -1257,14 +1288,30 @@ export default function Home() {
               >
                 {isResettingStudy ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Resetting...
                   </>
                 ) : (
-                  'Start from Beginning'
+                  "Start from Beginning"
                 )}
               </button>
             </div>

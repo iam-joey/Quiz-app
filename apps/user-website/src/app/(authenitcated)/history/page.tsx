@@ -15,7 +15,6 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { authOptions } from "@/src/lib/auth";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/src/lib/utils";
@@ -58,16 +57,45 @@ interface UserTestData {
 }
 
 type Participant = {
-  id: number;
+  id: string;
   name: string;
   grade: number;
 };
 
-const generateMockData = (): Participant[] => {
-  return Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
-    name: `Participant ${i + 1}`,
-    grade: +(Math.random() * 5 + 5).toFixed(2),
+const niceNames = [
+  "Alice Johnson",
+  "Bob Smith",
+  "Charlie Brown",
+  "Diana Prince",
+  "Edward Kenway",
+  "Fiona Gallagher",
+  "George Lucas",
+  "Hannah Montana",
+  "Ian Malcolm",
+  "Jessica Jones",
+  "Kevin Hart",
+  "Laura Croft",
+  "Michael Scott",
+  "Nina Simone",
+  "Oscar Isaac",
+  "Paula Patton",
+  "Quentin Tarantino",
+  "Rachel Green",
+  "Steve Jobs",
+  "Tina Fey",
+  "Uma Thurman",
+  "Victor Frankenstein",
+  "Wanda Maximoff",
+  "Xena Warrior",
+  "Yoda",
+  "Zoe Saldana",
+];
+
+const generateMockData = (count: number): Participant[] => {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `mock-${1000 + i}`,
+    name: niceNames[Math.floor(Math.random() * niceNames.length)] || "Unknown", // Select a random name or default to "Unknown"
+    grade: +(Math.random() * 5 + 5).toFixed(2).toString(), // Random grade between 5.00 and 10.00
   })).sort((a, b) => b.grade - a.grade);
 };
 
@@ -91,6 +119,7 @@ export default function TestList() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showTestHistory, setShowTestHistory] = useState(false);
   const session = useSession();
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   const handleTestClick = (
     testId: string,
@@ -150,14 +179,50 @@ export default function TestList() {
     }
   };
 
+  const fetchLeaderboard = async () => {
+    const loadingId = toast.loading("Loading leaderboard");
+    try {
+      const response = await fetch("/api/ranks");
+      if (!response.ok) {
+        throw new Error("Failed to fetch leaderboard");
+      }
+      const result = await response.json();
+      if (result.error) {
+        throw new Error(result.msg);
+      }
+      let leaderboardData = result.data;
+
+      // If we have fewer than 50 participants, mock the rest
+      if (leaderboardData.length < 50) {
+        const mockedData = generateMockData(50 - leaderboardData.length);
+        leaderboardData = [...leaderboardData, ...mockedData];
+      }
+
+      // Sort the combined data
+      leaderboardData.sort(
+        (a: Participant, b: Participant) => b.grade - a.grade
+      );
+
+      setParticipants(leaderboardData);
+      toast.dismiss(loadingId);
+      toast.success("Leaderboard loaded successfully");
+    } catch (error) {
+      toast.dismiss(loadingId);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while fetching leaderboard"
+      );
+    }
+  };
+
   useEffect(() => {
     if (session.data?.user?.id) {
       fetchData();
       fetchStats();
+      fetchLeaderboard();
     }
   }, [session.data?.user?.id]);
-
-  const participants = generateMockData();
 
   return (
     <div className="container mx-auto p-4 space-y-8">
@@ -245,7 +310,7 @@ export default function TestList() {
                             </TableCell>
                             <TableCell>{participant.name}</TableCell>
                             <TableCell className="text-right font-semibold">
-                              {participant.grade.toFixed(2)}
+                              {parseFloat(participant.grade).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}
