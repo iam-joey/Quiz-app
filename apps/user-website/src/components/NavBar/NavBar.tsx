@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuContent,
+  DropdownMenuContent, 
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { ToggleMode } from "./ToggleButton";
+import { ToggleMode } from "./ToggleButton"; 
 
 function NavBar() {
   const router = useRouter();

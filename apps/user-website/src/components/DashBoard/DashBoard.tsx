@@ -336,16 +336,6 @@ export default function Home() {
           >
             Tests
           </button>
-          <button
-            onClick={() => setActiveTab("Learnings")}
-            className={`flex-1 py-2 text-center ${
-              activeTab === "Learnings"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-            }`}
-          >
-            Learnings
-          </button>
         </div>
 
         {activeTab === "Tests" && (
@@ -467,11 +457,7 @@ export default function Home() {
                 Start
               </button>
             </div>
-          </div>
-        )}
 
-        {activeTab === "Learnings" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
               <div className="flex items-center mb-4">
                 <svg

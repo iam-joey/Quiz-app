@@ -207,6 +207,7 @@ export const POST = async (
                 id: true,
                 name: true,
                 docfileName: true,
+                pages: true,
               },
             },
             currentPage: true,
