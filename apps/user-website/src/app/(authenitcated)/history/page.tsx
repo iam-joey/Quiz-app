@@ -254,11 +254,11 @@ export default function TestList() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Card>
+        <Card className="bg-slate-800">
           <CardContent className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold flex items-center">
-                <Trophy className="mr-2 text-yellow-400" /> Leaderboard
+                <Trophy className="mr-2 text-yellow-400" /> Ranking
               </h2>
               <Button
                 variant="outline"
@@ -299,7 +299,7 @@ export default function TestList() {
                             key={participant.id}
                             className={`
                               transition-colors
-                              ${index < 3 ? "bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800" : "hover:bg-gray-100 dark:hover:bg-gray-800"}
+                              ${index < 3 ? "bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800" : "hover:bg-gray-100 dark:hover:bg-gray-800"}
                             `}
                           >
                             <TableCell className="font-medium">
@@ -329,7 +329,7 @@ export default function TestList() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
-        <Card>
+        <Card className="bg-slate-800">
           <CardContent className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold flex items-center">
@@ -370,7 +370,7 @@ export default function TestList() {
                             transition={{ duration: 0.3, delay: index * 0.1 }}
                           >
                             <Card
-                              className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden transform hover:scale-105"
+                              className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-900 overflow-hidden transform hover:scale-105"
                               onClick={() =>
                                 handleTestClick(
                                   test.id,
@@ -446,7 +446,7 @@ export default function TestList() {
                               transition={{ duration: 0.3, delay: index * 0.1 }}
                             >
                               <Card
-                                className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden transform hover:scale-105"
+                                className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-900 overflow-hidden transform hover:scale-105"
                                 onClick={() =>
                                   handleTestClick(
                                     test.id,
