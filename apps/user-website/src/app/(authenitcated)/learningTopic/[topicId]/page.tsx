@@ -8,6 +8,7 @@ import { PDFDocumentProxy, getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
 import { useTheme } from "next-themes";
 import { useLearningTopic } from "@/components/context/LearningTopicContext";
+import { debounce } from 'lodash';
 
 // Set the workerSrc to the local worker
 GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -370,8 +371,8 @@ export default function LearningTopic() {
       });
   };
 
-  // Modify updateCurrentPage to save the complete state
-  const updateCurrentPage = async (newPage: number) => {
+  // Add this debounced function near the top of the component
+  const debouncedUpdatePage = debounce(async (newPage: number) => {
     if (!session.data?.user || !selectedTopic) return;
     const userId = (session.data.user as any).id;
     
@@ -440,7 +441,19 @@ export default function LearningTopic() {
     } catch (error) {
       console.error("Error updating current page:", error);
     }
+  }, 500); // 500ms delay
+
+  // Modify updateCurrentPage to use the debounced version
+  const updateCurrentPage = (newPage: number) => {
+    debouncedUpdatePage(newPage);
   };
+
+  // Add cleanup for debounced function
+  useEffect(() => {
+    return () => {
+      debouncedUpdatePage.cancel();
+    };
+  }, []);
 
   const goToPrevPage = async () => {
     if (pageNumber > 1) {
