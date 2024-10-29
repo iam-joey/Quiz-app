@@ -53,6 +53,12 @@ export default function Home() {
   const [isResettingStudy, setIsResettingStudy] = useState(false);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const { learningTopicData, setLearningTopicData } = useLearningTopic();
+  const [showPreviousPapersDialog, setShowPreviousPapersDialog] = useState(false);
+  const [selectedPreviousPaperCategory, setSelectedPreviousPaperCategory] = useState<string | null>(null);
+  const [previousPapersSearchTerm, setPreviousPapersSearchTerm] = useState("");
+  const [previousPapersCategories, setPreviousPapersCategories] = useState<
+    Array<{ id: string; name: string; questionCount: number }>
+  >([]);
 
   useEffect(() => {
     setTestData(null);
@@ -334,6 +340,101 @@ export default function Home() {
     setShowContinueDialog(false);
   };
 
+  const fetchPreviousPapersCategories = async () => {
+    try {
+      const response = await fetch("/api/categorys?isPrevTopic=true", {
+        method: "GET",
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      });
+      console.log("response", response);
+      const data = await response.json();
+      if (data.err === false) {
+        setPreviousPapersCategories(data.data);
+      } else {
+        setError("Failed to fetch previous papers categories");
+      }
+    } catch (error) {
+      console.error("Error fetching previous papers categories:", error);
+      setError("An error occurred while fetching previous papers categories");
+    }
+  };
+
+  useEffect(() => {
+    if (showPreviousPapersDialog) {
+      fetchPreviousPapersCategories();
+    }
+  }, [showPreviousPapersDialog]);
+
+  const filteredPreviousPapersCategories = previousPapersCategories.filter((category) =>
+    category.name.toLowerCase().includes(previousPapersSearchTerm.toLowerCase())
+  );
+
+  const startPreviousPaperTest = async () => {
+    if (!selectedPreviousPaperCategory) return;
+
+    // Find the selected category to get its questionCount
+    const selectedCategory = previousPapersCategories.find(
+      category => category.id === selectedPreviousPaperCategory
+    );
+
+    if (!selectedCategory) {
+      toast.error("Selected category not found");
+      return;
+    }
+
+    console.log("selectedCategory", selectedPreviousPaperCategory);
+
+    const testConfig = {
+      userId: (session.data?.user as any)?.id,
+      isTimed: true,
+      duration: 4 * 3600, // 4 hours
+      numberOfQuestions: selectedCategory.questionCount, // Use actual question count
+      categoryId: selectedPreviousPaperCategory,
+      testType: "SIMULATION"
+    };
+
+    console.log("testConfig", testConfig);
+
+    setIsStartingTest(true);
+    try {
+      const response = await fetch("/api/createtest?isPrevTopic=true", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(testConfig),
+      });
+
+      // console.log("response", response);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || "Failed to create test. Please try again.");
+      }
+
+      const testData = await response.json();
+      const data= testData.data;
+      console.log("testData", data);
+      const testDataWithIsCompleted = { ...data, isCompleted: false };
+        
+        setSimulationTestData(testDataWithIsCompleted);
+        localStorage.setItem(
+          `simulationTestData_${data.id}`,
+          JSON.stringify(testDataWithIsCompleted)
+        );
+        
+        router.push(`/test/${data.id}?type=SIMULATION`);
+    } catch (error) {
+      console.error("Error creating test:", error); 
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsStartingTest(false);
+      setShowPreviousPapersDialog(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white p-4">
       <div className="w-full max-w-3xl">
@@ -592,8 +693,9 @@ export default function Home() {
               onClick={() => {
                 if (selectedCategory === "exam_simulation") {
                   startTest(true); // Pass true to indicate it's an exam simulation
-                } else {
-                  toast.info("Previous Papers feature is coming soon!");
+                } else if (selectedCategory === "previous_papers") {
+                  setShowExamSimulationDialog(false);
+                  setShowPreviousPapersDialog(true);
                 }
               }}
               className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out ${
@@ -628,7 +730,7 @@ export default function Home() {
                   Starting Exam Simulation...
                 </span>
               ) : (
-                "Start"
+                selectedCategory === "previous_papers" ? "Next" : "Start"
               )}
             </button>
           </div>
@@ -1315,6 +1417,118 @@ export default function Home() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showPreviousPapersDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full relative">
+            <button
+              onClick={() => {
+                setShowPreviousPapersDialog(false);
+                setSelectedPreviousPaperCategory(null);
+                setPreviousPapersSearchTerm("");
+              }}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <h2 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">
+              Previous Papers Categories
+            </h2>
+            <input
+              type="text"
+              placeholder="Search categories..."
+              value={previousPapersSearchTerm}
+              onChange={(e) => setPreviousPapersSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
+            />
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {filteredPreviousPapersCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedPreviousPaperCategory(category.id)}
+                  className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                    selectedPreviousPaperCategory === category.id
+                      ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                      : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                  }`}
+                >
+                  <span>{category.name}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {category.questionCount} questions
+                  </span>
+                  {selectedPreviousPaperCategory === category.id && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={startPreviousPaperTest}
+              className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out flex items-center justify-center ${
+                selectedPreviousPaperCategory && !isStartingTest
+                  ? "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                  : "bg-blue-200 text-blue-400 dark:bg-blue-300 dark:text-blue-500 cursor-not-allowed"
+              }`}
+              disabled={!selectedPreviousPaperCategory || isStartingTest}
+            >
+              {isStartingTest ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Starting Test...
+                </>
+              ) : (
+                "Start Test"
+              )}
+            </button>
           </div>
         </div>
       )}
