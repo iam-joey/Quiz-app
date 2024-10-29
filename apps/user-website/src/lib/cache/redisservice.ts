@@ -60,7 +60,11 @@ class RedisCache {
     return RedisCache.instance;
   }
 
-  public async set(key: string, value: any, ttl: number = 3600): Promise<void> {
+  public async set(
+    key: string,
+    value: any,
+    ttl: number = 360000
+  ): Promise<void> {
     console.log("Setting cache");
     await this.client.set(key, JSON.stringify(value), "EX", ttl);
   }

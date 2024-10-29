@@ -88,7 +88,7 @@ function NavBar() {
                 "Profile"
               )}
             </DropdownMenuItem>
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
               onClick={() => handleAction("createTest")}
               disabled={isLoading.createTest}
             >
@@ -100,8 +100,8 @@ function NavBar() {
               ) : (
                 "Create Test"
               )}
-            </DropdownMenuItem>
-            <DropdownMenuItem
+            </DropdownMenuItem> */}
+            {/* <DropdownMenuItem
               onClick={() => handleAction("history", "/history")}
               disabled={isLoading.history}
             >
@@ -113,7 +113,7 @@ function NavBar() {
               ) : (
                 "History"
               )}
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => handleAction("logout")}

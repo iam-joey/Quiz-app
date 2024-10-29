@@ -38,6 +38,7 @@ async function getDocumentFromS3(s3Key: string): Promise<Buffer> {
 //for fetching user combo topics so that you can render them in document viewer
 
 // GET /api/learningtopic/[progressId]
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,

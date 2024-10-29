@@ -80,7 +80,6 @@ class RedisQuestionCache {
       },
     });
 
-    // Store in cache
     await this.setQuestionsToCache(cacheKey, questions);
 
     return questions;

@@ -3,7 +3,7 @@ import { UserTestDetailSchema } from "@/src/lib/validation";
 import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
 
-const redisCache = RedisCache.getInstance(); // Singleton instance of RedisCache
+const redisCache = RedisCache.getInstance();
 
 export const POST = async (req: NextRequest) => {
   try {
