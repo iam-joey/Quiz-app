@@ -54,16 +54,27 @@ export default function LearningTopic() {
   const calculateOverallProgress = () => {
     if (!topics.length) return 0;
     
-    const totalPages = topics.reduce((sum, topic) => sum + topic.progress.totalPages, 0);
-    const completedPages = topics.reduce((sum, topic) => {
-      // If topic is completed or current page is equal to total pages
-      if (topic.progress.currentPage >= topic.progress.totalPages) {
-        return sum + topic.progress.totalPages;
-      }
-      // For the current topic, add its current progress
-      return sum + (topic.progress.currentPage || 1);
-    }, 0);
+    let completedPages = 0;
+    let totalPages = 0;
 
+    topics.forEach((topic, index) => {
+      const topicTotalPages = topic.progress.totalPages;
+      totalPages += topicTotalPages;
+
+      if (index < currentTopicIndex) {
+        // Previous topics are fully completed
+        completedPages += topicTotalPages;
+      } else if (index === currentTopicIndex) {
+        // Current topic - add current page
+        completedPages += (topic.progress.currentPage); // Subtract 1 since we're currently viewing the page
+      }
+      // Future topics don't contribute to completed pages
+    });
+
+    // Avoid division by zero
+    if (totalPages === 0) return 0;
+    
+    // Calculate percentage and round to nearest integer
     return Math.round((completedPages / totalPages) * 100);
   };
 
@@ -527,6 +538,42 @@ export default function LearningTopic() {
     };
   }, [selectedTopic, pageNumber, currentTopicIndex]);
 
+  // Add this new function near your other navigation functions
+  const resetCurrentTopic = async () => {
+    if (!selectedTopic || !session.data?.user) return;
+
+    const userId = (session.data.user as any).id;
+    const combinationId = progressId; // Use progressId as combinationId
+
+    try {
+      const response = await fetch(`/api/learningtopicreset/${userId}/${combinationId}`, {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (result.err) {
+        console.error("Error resetting topic:", result.message);
+        return;
+      }
+
+      console.log("Topics deleted successfully");
+
+      setLearningTopicData(null);
+
+      router.push("/topics");
+    
+
+      // Reset the page number and update the current page
+      // setPageNumber(1);
+      // await updateCurrentPage(1);
+
+      // Optionally, refresh topics or handle UI updates here
+    } catch (error) {
+      console.error("Error resetting topic:", error);
+    }
+  };
+
   return (
     <div
       className="container mx-auto p-4 flex"
@@ -617,16 +664,23 @@ export default function LearningTopic() {
                   <span className="self-center dark:text-white">
                     Page {pageNumber} of {numPages}
                   </span>
-                  <button
-                    className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
-                    disabled={
-                      pageNumber >= numPages &&
-                      currentTopicIndex === topics.length - 1
-                    }
-                    onClick={goToNextPage}
-                  >
-                    Next
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                      disabled={pageNumber >= numPages && currentTopicIndex === topics.length - 1}
+                      onClick={goToNextPage}
+                    >
+                      Next
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-yellow-500 dark:bg-yellow-600 text-white rounded hover:bg-yellow-600 dark:hover:bg-yellow-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:hover:bg-gray-300 dark:disabled:hover:bg-gray-600"
+                      onClick={resetCurrentTopic}
+                      disabled={progress < 100}
+                      title={progress < 100 ? "Complete all topics to reset" : "Reset progress"}
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
