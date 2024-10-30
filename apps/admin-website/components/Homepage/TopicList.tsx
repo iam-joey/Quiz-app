@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import AddTopicForm from "./AddTopicForm";
-import { deleteCategory, editTopicName } from "@/src/lib/actions";
+import { deleteCategory, editCategoryName } from "@/src/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Edit } from "lucide-react";
@@ -74,7 +74,7 @@ export default function TopicList({
   const handleEditConfirm = async () => {
     if (topicToEdit && newTopicName) {
       setIsEditing(true);
-      const result = await editTopicName(topicToEdit.id, newTopicName);
+      const result = await editCategoryName(topicToEdit.id, newTopicName);
       setIsEditing(false);
       if (result.err) {
         toast.warning(`Failed to edit topic name: ${result.msg}`);

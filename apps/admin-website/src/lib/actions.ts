@@ -309,7 +309,7 @@ export async function deleteCategory(id: string) {
   try {
     // Check if the category exists
     const findId = await prisma.category.findUnique({
-      where: { id },
+      where: { id, deleted: false },
     });
 
     if (!findId) {
@@ -336,6 +336,55 @@ export async function deleteCategory(id: string) {
   } catch (error) {
     console.error("Error deleting category:", error);
     return { err: true, msg: "Failed to delete the category" };
+  }
+}
+
+export async function editCategoryName(id: string, newName: string) {
+  try {
+    const findId = await prisma.category.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!findId) {
+      return {
+        msg: "Topic not present in db",
+        err: true,
+      };
+    }
+
+    const findName = await prisma.category.findUnique({
+      where: {
+        name: newName,
+      },
+    });
+
+    if (findName) {
+      return {
+        msg: "Name already present",
+        err: true,
+      };
+    }
+
+    await prisma.category.update({
+      where: {
+        id,
+      },
+      data: {
+        name: newName,
+      },
+    });
+
+    return {
+      msg: "Topic name updated",
+      err: false,
+    };
+  } catch (error) {
+    return {
+      msg: "Something went wrong while updating",
+      err: true,
+    };
   }
 }
 
@@ -424,55 +473,6 @@ function extractOriginalName(fullName: string): string {
     return parts.slice(1, -1).join("_");
   }
   return fullName; // Return the full name if it doesn't match the expected format
-}
-
-export async function editTopicName(id: string, newName: string) {
-  try {
-    const findId = await prisma.category.findUnique({
-      where: {
-        id,
-      },
-    });
-
-    if (!findId) {
-      return {
-        msg: "Topic not present in db",
-        err: true,
-      };
-    }
-
-    const findName = await prisma.category.findUnique({
-      where: {
-        name: newName,
-      },
-    });
-
-    if (findName) {
-      return {
-        msg: "Name already present",
-        err: true,
-      };
-    }
-
-    await prisma.category.update({
-      where: {
-        id,
-      },
-      data: {
-        name: newName,
-      },
-    });
-
-    return {
-      msg: "Topic name updated",
-      err: false,
-    };
-  } catch (error) {
-    return {
-      msg: "Something went wrong while updating",
-      err: true,
-    };
-  }
 }
 
 export async function addTopicDoc(name: string) {

@@ -190,7 +190,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     let testData;
-
+    console.log("answers", answers);
     // Fetch the test data based on test type
     if (testType === "SIMULATION") {
       testData = await prisma.simulationTestDetail.findUnique({
@@ -234,14 +234,12 @@ export const POST = async (req: NextRequest) => {
     questions.forEach((question, index) => {
       const correctAnswerIds = question.answer;
       const userAnswerIds = answers[index] || [];
-
       const isCorrect =
         correctAnswerIds.length === userAnswerIds.length &&
         correctAnswerIds.every((id: any) => userAnswerIds.includes(id));
-
       if (isCorrect) correctAnswers++;
     });
-
+    console.log("correctAnswers", correctAnswers);
     // Calculate metrics and round them
     const roundedScore = Math.round((correctAnswers / questions.length) * 100);
     const roundedAccuracy = Math.round((correctAnswers / answers.length) * 100);

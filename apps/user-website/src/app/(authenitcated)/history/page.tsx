@@ -288,22 +288,22 @@ export default function TestList() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {grade && (
-          <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <Trophy className="w-12 h-12" />
-                <div>
-                  <h3 className="text-2xl font-bold">Average Grade</h3>
-                  <p className="text-xl">
-                    Your average grade is{" "}
-                    <span className="font-bold text-3xl">{grade}</span>
-                  </p>
-                </div>
+        <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <Trophy className="w-12 h-12" />
+              <div>
+                <h3 className="text-2xl font-bold">Average Grade</h3>
+                <p className="text-xl">
+                  Your average grade is{" "}
+                  <span className="font-bold text-3xl">
+                    {grade !== null ? grade : "0"}
+                  </span>
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       <motion.div
@@ -615,7 +615,7 @@ export default function TestList() {
                     <div className="flex items-center justify-center h-32">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
-                  ) : learningHistory.length > 0 ? (
+                  ) : learningHistory && learningHistory.length > 0 ? (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {learningHistory.map((item, index) => (
                         <motion.div
