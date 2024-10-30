@@ -67,14 +67,24 @@ export default function Home() {
     setSimulationTestData(null);
     setLearningTopicData(null);
 
-    // // Clear all test-related data from local storage
-    // Object.keys(localStorage).forEach(key => {
-    //   if (key.startsWith('testData_') ||
-    //       key.startsWith('simulationTestData_') ||
-    //       key.startsWith('testProgress_')) {
-    //     localStorage.removeItem(key);
-    //   }
-    // });
+    // Clear all learning-related data from local storage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('testData_') ||
+          key.startsWith('simulationTestData_') ||
+          key.startsWith('testProgress_') ||
+          key === 'currentPageNumber' ||
+          key === 'currentTopicId' ||
+          key === 'currentTopicIndex' ||
+          key === 'lastActiveTopicIndex' ||
+          key === 'lastSavedTime' ||
+          key === 'learningTopicState' ||
+          key === 'topicsData' ||
+          key === 'topicsOrder' ||
+          key === 'topicsProgress' ||
+          key === 'nextauth.message') {
+        localStorage.removeItem(key);
+      }
+    });
 
     const fetchCategories = async () => {
       try {
@@ -265,6 +275,8 @@ export default function Home() {
 
       const result = await response.json();
       console.log("result", result);
+
+      console.log("result.data", result.data);
 
       if (result.data.new) {
         console.log("result.data", result.data);
