@@ -38,6 +38,28 @@ export default function Topics() {
   };
 
   useEffect(() => {
+    setLearningTopicData(null);
+    // Clear all learning-related data from local storage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('testData_') ||
+          key.startsWith('simulationTestData_') ||
+          key.startsWith('testProgress_') ||
+          key === 'currentPageNumber' ||
+          key === 'currentTopicId' ||
+          key === 'currentTopicIndex' ||
+          key === 'lastActiveTopicIndex' ||
+          key === 'lastSavedTime' ||
+          key === 'learningTopicState' ||
+          key === 'topicsData' ||
+          key === 'topicsOrder' ||
+          key === 'topicsProgress' ||
+          key === 'nextauth.message') {
+        localStorage.removeItem(key);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     fetchTopics();
   }, []);
 

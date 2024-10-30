@@ -3,14 +3,21 @@
 import { authOptions } from "@/src/lib/auth";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { PDFDocumentProxy, getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
 import { useTheme } from "next-themes";
 import { useLearningTopic } from "@/components/context/LearningTopicContext";
+import debounce from "lodash/debounce";
 
 // Set the workerSrc to the local worker
 GlobalWorkerOptions.workerSrc = pdfWorker;
+
+type PendingUpdate = {
+  userId: string;
+  topicId: string;
+  page: number;
+};
 
 export default function LearningTopic() {
   const router = useRouter();
@@ -31,6 +38,50 @@ export default function LearningTopic() {
   const [currentTopicIndex, setCurrentTopicIndex] = useState<number>(0);
   const [topicsProgress, setTopicsProgress] = useState<Record<string, number>>(
     {}
+  );
+  const [pendingUpdates, setPendingUpdates] = useState<PendingUpdate[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const debouncedUpdateServer = useCallback(
+    debounce(async (updates: PendingUpdate[]) => {
+      if (updates.length === 0) return;
+      
+      setIsUpdating(true);
+      try {
+        // Get the latest update for each topicId
+        const latestUpdates = updates.reduce((acc: PendingUpdate[], curr) => {
+          const existing = acc.findIndex(u => u.topicId === curr.topicId);
+          if (existing === -1) {
+            acc.push(curr);
+          } else {
+            acc[existing] = curr;
+          }
+          return acc;
+        }, []);
+
+        // Process all updates in parallel
+        await Promise.all(
+          latestUpdates.map(update =>
+            fetch(
+              `/api/updatecurrentpage/${update.userId}/${progressId}/${update.topicId}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ page: update.page }),
+              }
+            )
+          )
+        );
+
+        // Clear pending updates after successful save
+        setPendingUpdates([]);
+      } catch (error) {
+        console.error("Error updating pages:", error);
+      } finally {
+        setIsUpdating(false);
+      }
+    }, 5000), // Delay of 5 seconds
+    []
   );
 
   // Initialize topicsProgress when topics are loaded
@@ -77,7 +128,6 @@ export default function LearningTopic() {
     // Calculate percentage and round to nearest integer
     return Math.round((completedPages / totalPages) * 100);
   };
-
   // Update progress whenever relevant states change
   useEffect(() => {
     if (topics.length > 0) {
@@ -89,15 +139,8 @@ export default function LearningTopic() {
   // Add this function to sort topics
   const sortTopics = (topicsArray: any[]) => {
     return [...topicsArray].sort((a, b) => {
-      // Check actual completion (currentPage >= totalPages)
-      const aCompleted = a.progress.currentPage >= a.progress.totalPages;
-      const bCompleted = b.progress.currentPage >= b.progress.totalPages;
-      
-      if (aCompleted && !bCompleted) return -1;
-      if (!bCompleted && aCompleted) return 1;
-      
-      // If both have same completion status, maintain original order
-      return topicsArray.indexOf(a) - topicsArray.indexOf(b);
+      // First sort by original ID to maintain consistent order
+      return a.id.localeCompare(b.id);
     });
   };
 
@@ -108,10 +151,17 @@ export default function LearningTopic() {
 
     if (learningTopicData?.userTopics) {
       console.log("Using context data");
+      
       const topicsArray = learningTopicData.userTopics.map((userTopic: any) => {
         const pdfData = learningTopicData.pdfs.find(
           (pdf: any) => pdf.topicId === userTopic.topic.id
         );
+        
+        // Use context data as source of truth
+        const currentPage = userTopic.currentPage || 1;
+        const isCompleted = currentPage >= userTopic.topic.pages;
+        const status = isCompleted ? 'Completed' : 'In Progress';
+
         return {
           id: userTopic.topic.id,
           title: userTopic.topic.name,
@@ -119,10 +169,10 @@ export default function LearningTopic() {
             ? `data:application/pdf;base64,${pdfData.pdf}`
             : null,
           progress: {
-            currentPage: userTopic.currentPage || 1,
-            totalPages: userTopic.topic.pages || 0,
-            isCompleted: parseInt(userTopic.currentPage) >= parseInt(userTopic.topic.pages)
-          },
+            currentPage: currentPage,
+            totalPages: userTopic.topic.pages,
+            status: status
+          }
         };
       });
 
@@ -130,10 +180,10 @@ export default function LearningTopic() {
       const sortedTopics = sortTopics(topicsArray);
       setTopics(sortedTopics);
 
-      // Initialize topicsProgress with actual saved progress
+      // Initialize topicsProgress directly from context data
       const initialProgress = sortedTopics.reduce((acc: any, topic: any) => ({
         ...acc,
-        [topic.id]: topic.progress.currentPage
+        [topic.id]: topic.progress.currentPage || 1
       }), {});
       setTopicsProgress(initialProgress);
 
@@ -164,31 +214,41 @@ export default function LearningTopic() {
   // Modify the useEffect that handles initial topic selection
   useEffect(() => {
     if (topics.length > 0 && !selectedTopic) {
-      const { topicId, pageNumber: savedPageNumber } = loadSavedState();
+      const savedState = loadSavedState();
       
-      // First try to use the URL progressId
-      let topic = topics.find(t => t.id === progressId);
-      let topicIndex = topics.findIndex(t => t.id === progressId);
-      
-      // If no topic found by progressId, find the first incomplete topic
+      // Try to find the topic from saved state first
+      let topic = topics.find(t => t.id === savedState.topicId);
+      let topicIndex = topics.findIndex(t => t.id === savedState.topicId);
+      let pageToSet = savedState.pageNumber;
+
+      // If no saved state, try URL progressId
+      if (!topic) {
+        topic = topics.find(t => t.id === progressId);
+        topicIndex = topics.findIndex(t => t.id === progressId);
+        pageToSet = topic?.progress.currentPage || 1;
+      }
+
+      // If still no topic found, use the first incomplete topic
       if (!topic) {
         topic = topics.find(t => t.progress.currentPage < t.progress.totalPages);
         topicIndex = topics.findIndex(t => t.progress.currentPage < t.progress.totalPages);
+        pageToSet = topic?.progress.currentPage || 1;
       }
-      
-      // If still no topic found, use the last topic
+
+      // If all topics are complete, use the last topic
       if (!topic) {
         topic = topics[topics.length - 1];
         topicIndex = topics.length - 1;
+        pageToSet = topic?.progress.currentPage || 1;
       }
 
       setSelectedTopic(topic);
       setPdfUrl(topic.pdfUrl);
       setCurrentTopicIndex(topicIndex >= 0 ? topicIndex : 0);
-
-      // Use the saved page number or the topic's current page
-      const pageToSet = topic.progress.currentPage || 1;
       setPageNumber(pageToSet);
+      
+      // Save the state immediately
+      saveCurrentState(topic.id, pageToSet, topicIndex);
     }
   }, [topics, progressId]);
 
@@ -370,75 +430,68 @@ export default function LearningTopic() {
       });
   };
 
-  // Modify updateCurrentPage to save the complete state
+  // Replace your existing updateCurrentPage function with this optimized version
   const updateCurrentPage = async (newPage: number) => {
     if (!session.data?.user || !selectedTopic) return;
     const userId = (session.data.user as any).id;
-    
-    try {
-      const response = await fetch(
-        `/api/updatecurrentpage/${userId}/${progressId}/${selectedTopic.id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ page: newPage }),
-        }
-      );
 
-      if (!response.ok) {
-        throw new Error("Failed to update current page");
-      }
+    // Update local state immediately
+    setTopicsProgress((prev) => ({
+      ...prev,
+      [selectedTopic.id]: newPage,
+    }));
 
-      // Save complete state to localStorage
-      saveCurrentState(selectedTopic.id, newPage, currentTopicIndex);
+    // Update topics array
+    setTopics((prevTopics) =>
+      prevTopics.map((topic) =>
+        topic.id === selectedTopic.id
+          ? {
+              ...topic,
+              progress: {
+                ...topic.progress,
+                currentPage: newPage,
+                isCompleted: newPage >= topic.progress.totalPages,
+              },
+            }
+          : topic
+      )
+    );
 
-      // Update topicsProgress
-      setTopicsProgress((prev) => ({
-        ...prev,
-        [selectedTopic.id]: newPage,
-      }));
+    // Update selected topic
+    setSelectedTopic((prev: any) => ({
+      ...prev,
+      progress: {
+        ...prev.progress,
+        currentPage: newPage,
+        isCompleted: newPage >= prev.progress.totalPages,
+      },
+    }));
 
-      // Update topics array
-      setTopics((prevTopics) =>
-        prevTopics.map((topic) =>
-          topic.id === selectedTopic.id
-            ? {
-                ...topic,
-                progress: { 
-                  ...topic.progress, 
-                  currentPage: newPage,
-                  isCompleted: newPage >= topic.progress.totalPages 
-                }
-              }
-            : topic
-        )
-      );
+    // Save to local storage
+    saveCurrentState(selectedTopic.id, newPage, currentTopicIndex);
 
-      // Update selected topic
-      setSelectedTopic((prev: any) => ({
-        ...prev,
-        progress: { 
-          ...prev.progress, 
-          currentPage: newPage,
-          isCompleted: newPage >= prev.progress.totalPages 
-        }
-      }));
+    // Add to pending updates
+    setPendingUpdates((prev) => [
+      ...prev,
+      { userId, topicId: selectedTopic.id, page: newPage },
+    ]);
 
-      // Update learning topic context
-      if (setLearningTopicData && learningTopicData) {
-        setLearningTopicData({
-          ...learningTopicData,
-          userTopics: learningTopicData.userTopics.map((userTopic: any) =>
-            userTopic.topic.id === selectedTopic.id
-              ? { ...userTopic, currentPage: newPage }
-              : userTopic
-          ),
-        });
-      }
-    } catch (error) {
-      console.error("Error updating current page:", error);
+    // Trigger debounced server update
+    debouncedUpdateServer([
+      ...pendingUpdates,
+      { userId, topicId: selectedTopic.id, page: newPage },
+    ]);
+
+    // Update learning topic context
+    if (setLearningTopicData && learningTopicData) {
+      setLearningTopicData({
+        ...learningTopicData,
+        userTopics: learningTopicData.userTopics.map((userTopic: any) =>
+          userTopic.topic.id === selectedTopic.id
+            ? { ...userTopic, currentPage: newPage }
+            : userTopic
+        ),
+      });
     }
   };
 
@@ -573,6 +626,16 @@ export default function LearningTopic() {
       console.error("Error resetting topic:", error);
     }
   };
+
+  // Add cleanup effect for pending updates
+  useEffect(() => {
+    return () => {
+      // Flush any pending updates when component unmounts
+      if (pendingUpdates.length > 0) {
+        debouncedUpdateServer.flush();
+      }
+    };
+  }, [pendingUpdates]);
 
   return (
     <div
