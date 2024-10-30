@@ -1,48 +1,5 @@
 import { Redis } from "ioredis";
 
-// class RedisCache {
-//   private redis: Redis;
-
-//   constructor() {
-//     this.redis =
-//   }
-
-//   async getQuestionsByCategory(categoryId: string) {
-//     console.log("Fetching from cache");
-//     const cachedData = await this.redis.get(`questions:${categoryId}`);
-//     return cachedData ? JSON.parse(cachedData) : null;
-//   }
-
-//   async setQuestionsByCategory(categoryId: string, questions: any) {
-//     console.log("Setting cache");
-//     await this.redis.set(
-//       `questions:${categoryId}`,
-//       JSON.stringify(questions),
-//       "EX",
-//       3600 // 1 hour
-//     );
-//   }
-
-//   async getSimulationQuestions(type: "singleAnswer" | "multipleAnswer") {
-//     console.log("Fetching from cache");
-//     const cachedData = await this.redis.get(`simulation:${type}`);
-//     return cachedData ? JSON.parse(cachedData) : null;
-//   }
-
-//   async setSimulationQuestions(
-//     type: "singleAnswer" | "multipleAnswer",
-//     questions: any
-//   ) {
-//     console.log("Setting cache");
-//     await this.redis.set(
-//       `simulation:${type}`,
-//       JSON.stringify(questions),
-//       "EX",
-//       3600 // 1 hour
-//     );
-//   }
-// }
-
 class RedisCache {
   private static instance: RedisCache;
   private client: Redis;
@@ -63,7 +20,7 @@ class RedisCache {
   public async set(
     key: string,
     value: any,
-    ttl: number = 360000
+    ttl: number = 86400000
   ): Promise<void> {
     console.log("Setting cache");
     await this.client.set(key, JSON.stringify(value), "EX", ttl);

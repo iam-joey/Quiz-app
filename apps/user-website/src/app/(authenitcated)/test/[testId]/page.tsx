@@ -270,15 +270,15 @@ export default function TestPage() {
         return answers !== undefined && answers.length > 0;
       });
       
-      // if (!allAnswered) {
-      //   const unansweredQuestions = questions.filter((question) => {
-      //     const answers = selectedAnswers[question.id];
-      //     return answers === undefined || answers.length === 0;
-      //   });
-      //   console.log("Unanswered Questions:", unansweredQuestions.map(q => q.id));
-      //   toast.error(`Please answer all ${questions.length} questions. You've answered ${answeredCount} so far. Unanswered: ${unansweredQuestions.length}`);
-      //   return;
-      // }
+      if (!allAnswered) {
+        const unansweredQuestions = questions.filter((question) => {
+          const answers = selectedAnswers[question.id];
+          return answers === undefined || answers.length === 0;
+        });
+        console.log("Unanswered Questions:", unansweredQuestions.map(q => q.id));
+        toast.error(`Please answer all ${questions.length} questions. You've answered ${answeredCount} so far. Unanswered: ${unansweredQuestions.length}`);
+        return;
+      }
     }
 
     if (!forcedSubmit) {
