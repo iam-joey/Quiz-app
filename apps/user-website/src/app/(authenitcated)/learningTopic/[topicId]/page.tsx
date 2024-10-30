@@ -110,22 +110,24 @@ export default function LearningTopic() {
 
     topics.forEach((topic, index) => {
       const topicTotalPages = topic.progress.totalPages;
-      const currentPage = topic.progress.currentPage;
       totalPages += topicTotalPages;
 
       if (index < currentTopicIndex) {
-        // Topics before current topic are fully completed
+        // Previous topics are fully completed
         completedPages += topicTotalPages;
       } else if (index === currentTopicIndex) {
-        // Current topic: count up to current page - 1
-        completedPages += currentPage - 1;
+        // Current topic - add current page
+        completedPages += (topic.progress.currentPage); // Subtract 1 since we're currently viewing the page
       }
-      // Topics after current topic are not counted
+      // Future topics don't contribute to completed pages
     });
 
+    // Avoid division by zero
+    if (totalPages === 0) return 0;
+    
+    // Calculate percentage and round to nearest integer
     return Math.round((completedPages / totalPages) * 100);
   };
-
   // Update progress whenever relevant states change
   useEffect(() => {
     if (topics.length > 0) {
