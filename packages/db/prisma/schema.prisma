@@ -11,7 +11,7 @@ datasource db {
 model User {
   id                   String                 @id @unique @default(uuid())
   name                 String
-  studyProgram         Program?
+  studyProgram         String?
   speciality           String?
   workPlace            String?
   university           String?
@@ -43,11 +43,11 @@ model Admin {
   @@index([id])
 }
 
-enum Program {
-  MEDICINE
-  PHARMACY
-  DENTISTRY
-}
+  enum Program {
+    MEDICINE
+    PHARMACY
+    DENTISTRY
+  }
 
 model Category {
   id                   String                 @id @unique @default(uuid())
