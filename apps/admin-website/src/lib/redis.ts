@@ -19,9 +19,7 @@ class RedisQuestionCache {
   private readonly TTL = 24 * 60 * 60; // 24 hours in seconds
 
   constructor() {
-    this.redis = new Redis(
-      "rediss://default:AVilAAIjcDEzZWZiMDFlNzRmZmY0YzA2OTZlN2ExNDE3Y2JkMTJhNnAxMA@intense-gull-22693.upstash.io:6379"
-    );
+    this.redis = new Redis(process.env.REDIS_URL!);
 
     this.redis.on("error", (error) => {
       console.error("Redis connection error:", error);

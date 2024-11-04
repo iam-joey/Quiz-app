@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm i && cd ../../packages/db/ && npm i && npx prisma generate && cd ../../apps/user-website/ && next build",
+    "build": "npm i && cd ../../packages/db/ && npm i && NODE_ENV=production npx prisma generate --no-engine && cd ../../apps/user-website/ && next build",
     "start": "next start",
     "lint": "next lint"
   },

@@ -7,9 +7,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const s3 = new S3Client({
-  region: "eu-north-1",
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: "AKIAZ7SALBFD2SP2TPXB",
-    secretAccessKey: "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",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });

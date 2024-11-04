@@ -1,7 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { Readable } from "stream";
+import { S3Client } from "@aws-sdk/client-s3";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -43,9 +42,9 @@ export function formatDateTime(isoString: string) {
 }
 
 export const s3 = new S3Client({
-  region: "eu-north-1",
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: "AKIAZ7SALBFD2SP2TPXB",
-    secretAccessKey: "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",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
