@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -19,6 +19,7 @@ import { ToggleMode } from "./ToggleButton";
 
 function NavBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState({
     profile: false,
     createTest: false,
@@ -44,11 +45,20 @@ function NavBar() {
     }
   };
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (pathname.includes('/test/')) {
+      e.preventDefault();
+      window.dispatchEvent(new Event('logo-click'));
+    } else {
+      router.push('/');
+    }
+  };
+
   return (
     <div className="flex justify-between items-center p-4 border-b border-zinc-600 dark:bg-gray-800">
       <div
         className="cursor-pointer"
-        onClick={() => router.push("/")}
+        onClick={handleLogoClick}
         role="button"
         tabIndex={0}
         aria-label="Go to home page"

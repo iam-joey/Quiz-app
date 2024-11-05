@@ -214,6 +214,7 @@ export default function TestPage() {
   const [showQuestionList, setShowQuestionList] = useState(false);
   const [highlightedOption, setHighlightedOption] = useState<number>(-1);
   const handleSubmitRef = useRef<(forcedSubmit?: boolean) => Promise<void>>();
+  const [showExitDialog, setShowExitDialog] = useState(false);
 
   useEffect(() => {
     selectedAnswersRef.current = selectedAnswers;
@@ -789,6 +790,43 @@ export default function TestPage() {
     };
   }, [handleKeyPress]);
 
+  useEffect(() => {
+    const handleLogoClick = () => {
+      setShowExitDialog(true);
+    };
+
+    // Add event listener
+    window.addEventListener('logo-click', handleLogoClick);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('logo-click', handleLogoClick);
+    };
+  }, []);
+
+  // Add this function to handle clearing test progress
+  const handleExitTest = () => {
+    // Clear test progress from localStorage
+    const testProgressKeys = [
+      `testProgress_${params.testId}_currentIndex`,
+      `testProgress_${params.testId}_answers`,
+      `testProgress_${params.testId}_skipped`,
+      `testProgress_${params.testId}_answered`,
+      `testProgress_${params.testId}_remainingTime`,
+      `testData_${params.testId}`,
+      `simulationTestData_${params.testId}`,
+    ];
+    
+    testProgressKeys.forEach(key => localStorage.removeItem(key));
+    
+    // Reset context if needed
+    setSimulationTestData(null);
+    setTestData(null);
+    
+    // Navigate to home
+    router.push('/');
+  };
+
   if (isLoading || questions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -1052,6 +1090,28 @@ export default function TestPage() {
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
             <p className="mt-4 text-lg font-semibold">Submitting test...</p>
+          </div>
+        </div>
+      )}
+      {showExitDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4">Exit Test</h2>
+            <p className="mb-4">Do you want to discontinue the test? All progress will be lost.</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowExitDialog(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors duration-200"
+              >
+                No, continue test
+              </button>
+              <button
+                onClick={handleExitTest}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-200"
+              >
+                Yes, exit test
+              </button>
+            </div>
           </div>
         </div>
       )}

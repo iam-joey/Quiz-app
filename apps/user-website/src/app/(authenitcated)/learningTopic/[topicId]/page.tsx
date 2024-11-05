@@ -41,6 +41,7 @@ export default function LearningTopic() {
   );
   const [pendingUpdates, setPendingUpdates] = useState<PendingUpdate[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const debouncedUpdateServer = useCallback(
     debounce(async (updates: PendingUpdate[]) => {
@@ -637,6 +638,11 @@ export default function LearningTopic() {
     };
   }, [pendingUpdates]);
 
+  const handleBackToStart = () => {
+    setIsNavigating(true);
+    router.push("/topics");
+  };
+
   return (
     <div
       className="container mx-auto p-4 flex"
@@ -653,10 +659,10 @@ export default function LearningTopic() {
               </h1>
               <button
                 className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => router.push("/topics")}
-                disabled={progress < 100}
+                onClick={handleBackToStart}
+                disabled={progress < 100 || isNavigating}
               >
-                Back to Start
+                {isNavigating ? 'Redirecting...' : 'Back to Start'}
               </button>
             </div>
 
