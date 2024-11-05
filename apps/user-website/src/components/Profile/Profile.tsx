@@ -68,6 +68,32 @@ function Loader() {
   );
 }
 
+function ProfileField({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | null;
+  icon: React.ElementType;
+}) {
+  return (
+    <div className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div className="flex-shrink-0">
+        <Icon className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+      </div>
+      <div className="flex-grow">
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          {label}
+        </p>
+        <p className="text-base font-semibold text-gray-900 dark:text-white">
+          {value || "Not specified"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -141,64 +167,63 @@ export default function UserProfile() {
 
   if (!userProfile) {
     return (
-      <>
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>No Profile Data</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                No profile data is available. Please try again later or contact
-                support.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>No Profile Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>
+              No profile data is available. Please try again later or contact
+              support.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
+
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <Card className="w-full max-w-4xl mx-auto shadow-xl dark:bg-gray-800">
-          <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-700 dark:to-indigo-700 text-white rounded-t-lg">
-            <div className="flex flex-col md:flex-row items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Avatar className="w-24 h-24 border-4 border-white dark:border-gray-700 shadow-lg">
-                  <AvatarImage
-                    src={userProfile.image || ""}
-                    alt={userProfile.name}
-                  />
-                  <AvatarFallback className="text-2xl font-bold bg-blue-200 dark:bg-blue-900 text-blue-700 dark:text-blue-200">
-                    {userProfile.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle className="text-3xl font-bold">
-                    {userProfile.name}
-                  </CardTitle>
-                  <p className="text-blue-100 dark:text-blue-200 flex items-center">
-                    <MailIcon className="w-4 h-4 mr-2" />
-                    {userProfile.email}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 md:mt-0">
-                <Button
-                  variant={isEditing ? "secondary" : "default"}
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="shadow-md hover:shadow-lg transition-shadow dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                >
-                  {isEditing ? "Cancel" : "Edit Profile"}
-                </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <Card className="w-full max-w-4xl mx-auto shadow-xl dark:bg-gray-800">
+        <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-700 dark:to-indigo-700 text-white rounded-t-lg">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-24 h-24 border-4 border-white dark:border-gray-700 shadow-lg">
+                <AvatarImage
+                  src={userProfile.image || ""}
+                  alt={userProfile.name}
+                />
+                <AvatarFallback className="text-2xl font-bold bg-blue-200 dark:bg-blue-900 text-blue-700 dark:text-blue-200">
+                  {userProfile.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-3xl font-bold">
+                  {userProfile.name}
+                </CardTitle>
+                <p className="text-blue-100 dark:text-blue-200 flex items-center">
+                  <MailIcon className="w-4 h-4 mr-2" />
+                  {userProfile.email}
+                </p>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="mt-6 space-y-6">
+            <div className="mt-4 md:mt-0">
+              <Button
+                variant={isEditing ? "secondary" : "default"}
+                onClick={() => setIsEditing(!isEditing)}
+                className="shadow-md hover:shadow-lg transition-shadow dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+              >
+                {isEditing ? "Cancel" : "Edit Profile"}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="mt-6 space-y-6">
+          {isEditing ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label
@@ -208,7 +233,6 @@ export default function UserProfile() {
                   Study Program
                 </Label>
                 <Select
-                  disabled={!isEditing}
                   value={userProfile.studyProgram || undefined}
                   onValueChange={(value) =>
                     handleProgramChange(value as Program)
@@ -238,7 +262,6 @@ export default function UserProfile() {
                   name="speciality"
                   value={userProfile.speciality || ""}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
                   className="bg-white dark:bg-gray-700 border-2 border-blue-200 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                 />
               </div>
@@ -254,7 +277,6 @@ export default function UserProfile() {
                   name="workPlace"
                   value={userProfile.workPlace || ""}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
                   className="bg-white dark:bg-gray-700 border-2 border-blue-200 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                 />
               </div>
@@ -270,7 +292,6 @@ export default function UserProfile() {
                   name="university"
                   value={userProfile.university || ""}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
                   className="bg-white dark:bg-gray-700 border-2 border-blue-200 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                 />
               </div>
@@ -286,64 +307,91 @@ export default function UserProfile() {
                   name="promotion"
                   value={userProfile.promotion || ""}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
                   className="bg-white dark:bg-gray-700 border-2 border-blue-200 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                 />
               </div>
             </div>
-            <Separator className="my-6 dark:bg-gray-600" />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg shadow">
-                <BookOpenIcon className="w-8 h-8 mx-auto text-blue-500 dark:text-blue-300 mb-2" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Study Program
-                </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
-                  {userProfile.studyProgram}
-                </p>
-              </div>
-              <div className="bg-indigo-50 dark:bg-indigo-900 p-4 rounded-lg shadow">
-                <BriefcaseIcon className="w-8 h-8 mx-auto text-indigo-500 dark:text-indigo-300 mb-2" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Work Place
-                </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
-                  {userProfile.workPlace}
-                </p>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg shadow">
-                <GraduationCapIcon className="w-8 h-8 mx-auto text-purple-500 dark:text-purple-300 mb-2" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  University
-                </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
-                  {userProfile.university}
-                </p>
-              </div>
-              <div className="bg-pink-50 dark:bg-pink-900 p-4 rounded-lg shadow">
-                <CalendarIcon className="w-8 h-8 mx-auto text-pink-500 dark:text-pink-300 mb-2" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Promotion
-                </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
-                  {userProfile.promotion}
-                </p>
-              </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ProfileField
+                label="Study Program"
+                value={userProfile.studyProgram}
+                icon={BookOpenIcon}
+              />
+              <ProfileField
+                label="Speciality"
+                value={userProfile.speciality}
+                icon={GraduationCapIcon}
+              />
+              <ProfileField
+                label="Work Place"
+                value={userProfile.workPlace}
+                icon={BriefcaseIcon}
+              />
+              <ProfileField
+                label="University"
+                value={userProfile.university}
+                icon={GraduationCapIcon}
+              />
+              <ProfileField
+                label="Promotion"
+                value={userProfile.promotion}
+                icon={CalendarIcon}
+              />
             </div>
-          </CardContent>
-          {isEditing && (
-            <CardFooter className="bg-gray-50 dark:bg-gray-700 rounded-b-lg">
-              <Button
-                className="mt-5 ml-auto bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </CardFooter>
           )}
-        </Card>
-      </div>
-    </>
+          <Separator className="my-6 dark:bg-gray-600" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg shadow">
+              <BookOpenIcon className="w-8 h-8 mx-auto text-blue-500 dark:text-blue-300 mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Study Program
+              </p>
+              <p className="font-semibold text-gray-800 dark:text-gray-200">
+                {userProfile.studyProgram || "Not specified"}
+              </p>
+            </div>
+            <div className="bg-indigo-50 dark:bg-indigo-900 p-4 rounded-lg shadow">
+              <BriefcaseIcon className="w-8 h-8 mx-auto text-indigo-500 dark:text-indigo-300 mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Work Place
+              </p>
+              <p className="font-semibold text-gray-800 dark:text-gray-200">
+                {userProfile.workPlace || "Not specified"}
+              </p>
+            </div>
+            <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg shadow">
+              <GraduationCapIcon className="w-8 h-8 mx-auto text-purple-500 dark:text-purple-300 mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                University
+              </p>
+              <p className="font-semibold text-gray-800 dark:text-gray-200">
+                {userProfile.university || "Not specified"}
+              </p>
+            </div>
+            <div className="bg-pink-50 dark:bg-pink-900 p-4 rounded-lg shadow">
+              <CalendarIcon className="w-8 h-8 mx-auto text-pink-500 dark:text-pink-300 mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Promotion
+              </p>
+              <p className="font-semibold text-gray-800 dark:text-gray-200">
+                {userProfile.promotion || "Not specified"}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        {isEditing && (
+          <CardFooter className="bg-gray-50 dark:bg-gray-700 rounded-b-lg">
+            <Button
+              className="mt-5 ml-auto bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </CardFooter>
+        )}
+      </Card>
+    </div>
   );
 }
