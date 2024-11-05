@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,12 +12,21 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Edit, Save, Trash, Loader } from "lucide-react";
+import { Edit, Save, Trash, Loader, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import dynamic from "next/dynamic";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
+import { editParagraph } from "@/src/lib/actions";
 
 type Choice = {
   id: string;
@@ -38,32 +46,124 @@ type QuestionData = {
   choice: Choice[];
 };
 
-const defaultParagraph = `
-<h1>Heading 1</h1>
-<h2>Heading 2</h2>
-<h3>Heading 3</h3>
-<p><strong>Bold text</strong>, <em>italic text</em>, and <u>underlined text</u>.</p>
-<p>Normal paragraph with <span style="font-size: 18px;">different</span> <span style="font-size: 24px;">text</span> <span style="font-size: 36px;">sizes</span>.</p>
-<ul>
-  <li>Bullet point 1</li>
-  <li>Bullet point 2</li>
-</ul>
-<ol>
-  <li>Numbered item 1</li>
-  <li>Numbered item 2</li>
-</ol>
-`;
+function ParagraphDialog({
+  content,
+  onChange,
+  isEditing,
+  onEdit,
+  onSave,
+  questionId,
+}: {
+  content: string;
+  onChange: (content: string) => void;
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  questionId: string;
+}) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const result = await editParagraph(questionId, content);
+      if (result.err) {
+        toast.error(result.msg);
+      } else {
+        toast.success(result.msg);
+        onSave();
+        setDialogOpen(false);
+      }
+    } catch (error) {
+      toast.error("Failed to save paragraph");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">
+          <FileText className="mr-2 h-4 w-4" />
+          View Paragraph
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl h-[90vh]">
+        <DialogHeader className="flex flex-row items-center justify-between border-b pb-2">
+          <DialogTitle>Paragraph</DialogTitle>
+          {isEditing ? (
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {isSaving ? "Saving..." : "Save"}
+            </Button>
+          ) : (
+            <Button onClick={onEdit}>Edit</Button>
+          )}
+        </DialogHeader>
+        <div className="flex flex-col flex-grow h-full mt-4">
+          {isEditing ? (
+            <div className="flex-grow" style={{ height: "calc(90vh - 120px)" }}>
+              <ReactQuill
+                value={content}
+                onChange={onChange}
+                modules={{
+                  toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    [{ size: ["small", false, "large", "huge"] }],
+                    ["bold", "italic", "underline", "strike"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    [{ color: [] }],
+                    ["clean"],
+                  ],
+                }}
+                formats={[
+                  "header",
+                  "size",
+                  "bold",
+                  "italic",
+                  "underline",
+                  "strike",
+                  "list",
+                  "bullet",
+                  "color",
+                ]}
+                style={{ height: "100%" }}
+              />
+            </div>
+          ) : (
+            <div
+              className="prose prose-sm max-w-none dark:prose-invert overflow-y-auto"
+              style={{
+                height: "calc(90vh - 120px)",
+                padding: "1rem",
+                backgroundColor: "var(--background)",
+                borderRadius: "0.5rem",
+              }}
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 export default function QuestionEditor({
   params,
 }: {
   params: { questionId: string };
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isParagraphEditing, setIsParagraphEditing] = useState(false);
   const [questionData, setQuestionData] = useState<QuestionData>({
     id: "",
     question: "",
-    paragraph: defaultParagraph,
+    paragraph: "",
     title: "",
     categoryId: "",
     answer: [],
@@ -76,27 +176,23 @@ export default function QuestionEditor({
 
   const fetchQuestion = async () => {
     setIsLoading(true);
-    const id = toast.loading("fetching question");
+    const id = toast.loading("Fetching question");
     try {
       const response = await fetch(`/api/question/${params.questionId}`);
-      if (!response.ok) toast.warning("Failed to fetch question.");
+      if (!response.ok) throw new Error("Failed to fetch question");
       const data = await response.json();
-      if (data.err) {
-        toast.dismiss(id);
-        toast.info(`${data.msg}`);
-        setIsLoading(false);
-        return;
-      }
+      if (data.err) throw new Error(data.msg);
       toast.dismiss(id);
-      toast.info(`${data.msg}`);
+      toast.success(`${data.msg}`);
       setQuestionData({
         ...data.data,
-        paragraph: data.data.paragraph || defaultParagraph,
       });
-      setIsLoading(false);
     } catch (error) {
       toast.dismiss(id);
-      toast.error("Error fetching question.");
+      toast.error(
+        error instanceof Error ? error.message : "Error fetching question"
+      );
+    } finally {
       setIsLoading(false);
     }
   };
@@ -120,17 +216,15 @@ export default function QuestionEditor({
         body: JSON.stringify(questionData),
       });
 
-      if (!response.ok) {
-        toast.dismiss(loadingId);
-        toast.warning("Failed to update question.");
-      } else {
-        toast.dismiss(loadingId);
-        toast.success("Question updated successfully.");
-        setIsEditing(false);
-      }
+      if (!response.ok) throw new Error("Failed to update question");
+      toast.dismiss(loadingId);
+      toast.success("Question updated successfully");
+      setIsEditing(false);
     } catch (error) {
       toast.dismiss(loadingId);
-      toast.error("Error updating question.");
+      toast.error(
+        error instanceof Error ? error.message : "Error updating question"
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -145,16 +239,16 @@ export default function QuestionEditor({
         method: "POST",
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to delete question.");
-      }
-
+      if (!response.ok) throw new Error("Failed to delete question");
       toast.dismiss(loadingId);
-      toast.success("Question deleted successfully.");
+      toast.success("Question deleted successfully");
       router.push("/");
     } catch (error) {
       toast.dismiss(loadingId);
-      toast.error("Error deleting question.");
+      toast.error(
+        error instanceof Error ? error.message : "Error deleting question"
+      );
+    } finally {
       setIsDeleting(false);
     }
   };
@@ -183,16 +277,6 @@ export default function QuestionEditor({
         ? prev.answer.filter((id) => id !== choiceId)
         : [...prev.answer, choiceId],
     }));
-  };
-
-  const quillModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ size: ["small", false, "large", "huge"] }],
-      ["clean"],
-    ],
   };
 
   if (isLoading) return <div className="text-center">Loading...</div>;
@@ -255,25 +339,14 @@ export default function QuestionEditor({
               </li>
             ))}
           </ul>
-          {/* <div className="space-y-2">
-            <Label htmlFor="paragraph">Paragraph:</Label>
-            {isEditing ? (
-              <div className="border rounded-md">
-                <ReactQuill
-                  theme="snow"
-                  value={questionData.paragraph}
-                  onChange={handleParagraphChange}
-                  modules={quillModules}
-                  className="h-64"
-                />
-              </div>
-            ) : (
-              <div
-                className="ql-editor border rounded-md p-4"
-                dangerouslySetInnerHTML={{ __html: questionData.paragraph }}
-              />
-            )}
-          </div> */}
+          <ParagraphDialog
+            content={questionData.paragraph}
+            onChange={handleParagraphChange}
+            isEditing={isParagraphEditing}
+            onEdit={() => setIsParagraphEditing(true)}
+            onSave={() => setIsParagraphEditing(false)}
+            questionId={questionData.id}
+          />
         </CardContent>
         <CardFooter className="flex justify-end space-x-2 pt-6">
           {isEditing ? (

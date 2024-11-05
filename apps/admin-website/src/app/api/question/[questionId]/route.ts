@@ -1,6 +1,8 @@
 import prisma from "@repo/db/client";
 import { NextResponse } from "next/server";
 
+//api/question/[questionId] this is how the api endpoin look like
+
 export async function GET(
   req: Request,
   {
@@ -22,7 +24,13 @@ export async function GET(
 
     const data = await prisma.question.findUnique({
       where: { id },
-      include: { choice: true },
+      select: {
+        id: true,
+        question: true,
+        choice: true,
+        paragraph: true,
+        answer: true,
+      },
     });
 
     if (!data) {

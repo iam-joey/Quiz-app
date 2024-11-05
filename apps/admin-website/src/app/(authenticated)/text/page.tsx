@@ -8,7 +8,7 @@ import "react-quill/dist/quill.snow.css";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
-export default function Component() {
+export default function RichTextEditorComponent() {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(
     '<h1>Click the Edit button to modify this text.</h1><p>You can make it <strong>bold</strong>, <em>italic</em>, or add <u>underline</u>. You can also add bullet points:</p><ul><li>Point 1</li><li>Point 2</li></ul><h1>Lavde</h1><h1>hello</h1><p><span class="ql-size-small">Small text</span></p><p><span class="ql-size-large">Large text</span></p><p><span class="ql-size-huge">Huge text</span></p>'

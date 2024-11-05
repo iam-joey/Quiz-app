@@ -2,6 +2,9 @@ import { updateQuestion } from "@/src/lib/actions";
 import prisma from "@repo/db/client";
 import { NextResponse } from "next/server";
 
+// POST /api/updatequestion/[questionId]
+//also send the questiondata in the body
+
 export async function POST(
   req: Request,
   {
@@ -14,7 +17,6 @@ export async function POST(
 ) {
   try {
     const questionData = await req.json();
-    console.log("inside route", questionData);
 
     if (!questionData.question || !questionData.choice || !questionData.title) {
       return NextResponse.json({
@@ -74,7 +76,6 @@ export async function POST(
       });
     });
 
-    console.log("after update", updatedQuestion);
     return NextResponse.json(
       { err: false, msg: "Successfully updated", data: updatedQuestion },
       { status: 200 }

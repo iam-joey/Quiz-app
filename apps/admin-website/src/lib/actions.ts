@@ -650,3 +650,41 @@ export async function editTopicDocName(topicId: string, newName: string) {
     };
   }
 }
+
+export async function editParagraph(questionId: string, paragraph: string) {
+  try {
+    //paragraph is the new paragraph to be added which we get from the rich text editor in the frontend
+    const findQuestion = await prisma.question.findUnique({
+      where: {
+        id: questionId,
+      },
+    });
+
+    if (!findQuestion) {
+      return {
+        err: true,
+        msg: "Question not found",
+      };
+    }
+
+    await prisma.question.update({
+      where: {
+        id: questionId,
+      },
+      data: {
+        paragraph,
+      },
+    });
+
+    return {
+      err: false,
+      msg: "Paragraph added",
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      err: true,
+      msg: "Something went wrong while adding paragraph",
+    };
+  }
+}
