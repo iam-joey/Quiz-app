@@ -1,6 +1,8 @@
 import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
+//api/flags?resolved= true or false  (if true, get all resolved flags, if false get all unresolved flags)
+
 export const GET = async (req: NextRequest) => {
   try {
     const url = new URL(req.url);
@@ -16,6 +18,7 @@ export const GET = async (req: NextRequest) => {
         questionId: true,
         userId: true,
         resolved: true,
+        comment: true,
       },
     });
     return NextResponse.json({ error: false, flags });

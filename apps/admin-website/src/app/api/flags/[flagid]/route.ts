@@ -2,7 +2,7 @@ import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
 
 interface FlagData {
-  comment?: string;
+  comment: string;
   resolved?: boolean;
 }
 
