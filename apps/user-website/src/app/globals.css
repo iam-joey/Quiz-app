@@ -76,3 +76,56 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.ql-editor {
+  padding: 0 !important;
+}
+
+.ql-editor ul,
+.ql-editor ol {
+  padding-left: 1.5em !important;
+}
+
+.ql-editor li {
+  list-style-type: inherit !important;
+}
+
+.custom-quill-content h1 {
+  font-size: 2em !important;
+  font-weight: bold !important;
+  margin-bottom: 0.5em !important;
+  margin-top: 1em !important;
+}
+
+.custom-quill-content h2 {
+  font-size: 1.5em !important;
+  font-weight: bold !important;
+  margin-bottom: 0.5em !important;
+  margin-top: 1em !important;
+}
+
+.custom-quill-content h3 {
+  font-size: 1.17em !important;
+  font-weight: bold !important;
+  margin-bottom: 0.5em !important;
+  margin-top: 1em !important;
+}
+
+.custom-quill-content .ql-size-small {
+  font-size: 0.75em !important;
+}
+
+.custom-quill-content .ql-size-large {
+  font-size: 1.5em !important;
+}
+
+.custom-quill-content .ql-size-huge {
+  font-size: 2.5em !important;
+}
+
+.custom-quill-content h3 {
+  font-size: 1.17em !important;
+  font-weight: bold !important;
+  margin-bottom: 0.5em !important;
+  margin-top: 1em !important;
+}

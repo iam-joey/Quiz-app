@@ -17,13 +17,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
+import "react-quill/dist/quill.snow.css";
 interface Question {
   id: string;
   question: string;
   choice: { id: string; text: string }[];
   answer: string[];
-  level?: string; // Add this line
+  level: string;
+  paragraph: string;
 }
 
 interface TestResult {
@@ -48,6 +49,7 @@ interface SimulationTestResult {
     }>;
     answer: string[];
     level?: string; // Add this line
+    paragraph: string;
   }>;
   multipleQuestion: Array<{
     id: string;
@@ -58,6 +60,7 @@ interface SimulationTestResult {
     }>;
     answer: string[];
     level?: string; // Add this line
+    paragraph: string;
   }>;
   userAnswers: string[][];
   score: number;
@@ -90,14 +93,11 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
   const [expandedExplanations, setExpandedExplanations] = useState<{
     [key: string]: boolean;
   }>({});
-  console.log("simulation test result", simulationTestResult);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchTestData = async () => {
-      console.log("Results page");
-      console.log("testId", testId);
-      console.log("testType", testType);
       try {
         setIsLoading(true);
         const response = await fetch(`/api/test/${testId}/${testType}`);
@@ -129,6 +129,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
             totalTimeTaken,
             accuracy,
             percentage,
+            paragraph,
           } = data.data;
           console.log("question", question);
 
@@ -203,7 +204,6 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
       const data = await response.json();
       console.log("Flag response:", data);
 
-      
       if (!response.ok || data.error) {
         throw new Error(data.msg || "Failed to submit flag");
       }
@@ -327,7 +327,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                         </button>
                         {expandedExplanations[question.id] && (
                           <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
-                            <p>No explanation provided.</p>
+                            <ParagraphViewer content={question.paragraph} />{" "}
                           </div>
                         )}
                       </div>
@@ -420,7 +420,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           </button>
                           {expandedExplanations[question.id] && (
                             <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
-                              <p>No explanation provided.</p>
+                              <ParagraphViewer content={question.paragraph} />{" "}
                             </div>
                           )}
                         </div>
@@ -501,7 +501,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           </button>
                           {expandedExplanations[question.id] && (
                             <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
-                              <p>No explanation provided.</p>
+                              <ParagraphViewer content={question.paragraph} />{" "}
                             </div>
                           )}
                         </div>
@@ -546,14 +546,30 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
             >
               {isSubmitting ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Submitting...
                 </>
               ) : (
-                'Submit'
+                "Submit"
               )}
             </button>
           </div>
@@ -564,3 +580,24 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
 };
 
 export default TestResults;
+interface ParagraphViewerProps {
+  content: string;
+}
+function ParagraphViewer({ content }: ParagraphViewerProps) {
+  return (
+    <div className="w-full max-w-3xl mx-auto">
+      <div className="mt-2 p-4 rounded bg-white text-black">
+        <div
+          className="prose prose-sm max-w-none dark:prose-invert overflow-y-auto ql-editor custom-quill-content "
+          style={{
+            height: "calc(90vh - 120px)",
+            padding: "1rem",
+            backgroundColor: "var(--background)",
+            borderRadius: "0.5rem",
+          }}
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
+      </div>
+    </div>
+  );
+}

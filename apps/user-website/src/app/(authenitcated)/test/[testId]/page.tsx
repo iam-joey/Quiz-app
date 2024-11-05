@@ -255,97 +255,115 @@ export default function TestPage() {
     }
   }, [isTimed, remainingTime, params.testId]);
 
-  const handleSubmit = useCallback(async (forcedSubmit = false) => {
-    console.log("handleSubmit called", { forcedSubmit });
-    
-    if (testType === "SIMULATION" && !forcedSubmit) {
-      const answeredCount = Object.keys(selectedAnswers).length;
-      console.log("Selected Answers:", selectedAnswers);
-      console.log("Answered Count:", answeredCount);
-      console.log("Questions Length:", questions.length);
-      console.log("Answered Questions Set:", answeredQuestions);
+  const handleSubmit = useCallback(
+    async (forcedSubmit = false) => {
+      console.log("handleSubmit called", { forcedSubmit });
 
-      // Check if all questions are answered
-      const allAnswered = questions.every((question) => {
-        const answers = selectedAnswers[question.id];
-        return answers !== undefined && answers.length > 0;
-      });
-      
-      if (!allAnswered) {
-        const unansweredQuestions = questions.filter((question) => {
+      if (testType === "SIMULATION" && !forcedSubmit) {
+        const answeredCount = Object.keys(selectedAnswers).length;
+        console.log("Selected Answers:", selectedAnswers);
+        console.log("Answered Count:", answeredCount);
+        console.log("Questions Length:", questions.length);
+        console.log("Answered Questions Set:", answeredQuestions);
+
+        // Check if all questions are answered
+        const allAnswered = questions.every((question) => {
           const answers = selectedAnswers[question.id];
-          return answers === undefined || answers.length === 0;
+          return answers !== undefined && answers.length > 0;
         });
-        console.log("Unanswered Questions:", unansweredQuestions.map(q => q.id));
-        toast.error(`Please answer all ${questions.length} questions. You've answered ${answeredCount} so far. Unanswered: ${unansweredQuestions.length}`);
+
+        // if (!allAnswered) {
+        //   const unansweredQuestions = questions.filter((question) => {
+        //     const answers = selectedAnswers[question.id];
+        //     return answers === undefined || answers.length === 0;
+        //   });
+        //   console.log("Unanswered Questions:", unansweredQuestions.map(q => q.id));
+        //   toast.error(`Please answer all ${questions.length} questions. You've answered ${answeredCount} so far. Unanswered: ${unansweredQuestions.length}`);
+        //   return;
+        // }
+      }
+
+      if (!forcedSubmit) {
+        console.log("Showing confirm dialog");
+        console.log("testType", testType);
+        setShowConfirmDialog(true);
         return;
       }
-    }
 
-    if (!forcedSubmit) {
-      console.log("Showing confirm dialog");
-      console.log("testType", testType);
-      setShowConfirmDialog(true);
-      return;
-    }
+      setShowConfirmDialog(false);
+      setIsSubmitting(true);
 
-    setShowConfirmDialog(false);
-    setIsSubmitting(true);
-
-    // Handle both testData and simulationTestData
-    if (testData) {
-      testData.isCompleted = true;
-      console.log("testData in handleSubmit", testData);
-      localStorage.setItem(`testData_${params.testId}`, JSON.stringify(testData));
-    } else if (simulationTestData) {
-      simulationTestData.isCompleted = true;
-      console.log("simulationTestData in handleSubmit", simulationTestData);
-      localStorage.setItem(`simulationTestData_${params.testId}`, JSON.stringify(simulationTestData));
-    }
-
-    try {
-      const currentSelectedAnswers = selectedAnswersRef.current;
-      const answersToSubmit = questions.map(
-        (question) => currentSelectedAnswers[question.id] || []
-      );
-      console.log("userAnswers", answersToSubmit);
-      const testId= params.testId;
-      const type = searchParams.get("type") || "NOTIMER";
-
-      console.log("testId", testId);
-      console.log("type", type);
-
-      const response = await fetch(`/api/test/${testId}/${type}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          testid: testId,
-          testType: type,
-          answers: answersToSubmit,
-        }),
-      });
-      console.log("API response:", response);
-      const data = await response.json();
-      console.log("API data:", data);
-
-      if (data.err) {
-        console.error("API error:", data.msg);
-      } else {
-        console.log("Test submitted successfully:", data.data);
-        setTestResult(data.data);
-        setShowDialog(true);
-        // Clear all test-related data from local storage
-        clearTestLocalStorage();
+      // Handle both testData and simulationTestData
+      if (testData) {
+        testData.isCompleted = true;
+        console.log("testData in handleSubmit", testData);
+        localStorage.setItem(
+          `testData_${params.testId}`,
+          JSON.stringify(testData)
+        );
+      } else if (simulationTestData) {
+        simulationTestData.isCompleted = true;
+        console.log("simulationTestData in handleSubmit", simulationTestData);
+        localStorage.setItem(
+          `simulationTestData_${params.testId}`,
+          JSON.stringify(simulationTestData)
+        );
       }
-    } catch (error) {
-      console.error("Failed to submit test:", error);
-    } finally {
-      setIsSubmitting(false);
-      console.log("Submission process completed");
-    }
-  }, [testType, questions, selectedAnswers, answeredQuestions, testId, params.testId, testData, simulationTestData]);
+
+      try {
+        const currentSelectedAnswers = selectedAnswersRef.current;
+        const answersToSubmit = questions.map(
+          (question) => currentSelectedAnswers[question.id] || []
+        );
+        console.log("userAnswers", answersToSubmit);
+        const testId = params.testId;
+        const type = searchParams.get("type") || "NOTIMER";
+
+        console.log("testId", testId);
+        console.log("type", type);
+
+        const response = await fetch(`/api/test/${testId}/${type}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            testid: testId,
+            testType: type,
+            answers: answersToSubmit,
+          }),
+        });
+        console.log("API response:", response);
+        const data = await response.json();
+        console.log("API data:", data);
+
+        if (data.err) {
+          console.error("API error:", data.msg);
+        } else {
+          console.log("Test submitted successfully:", data.data);
+          setTestResult(data.data);
+          setShowDialog(true);
+          // Clear all test-related data from local storage
+          clearTestLocalStorage();
+        }
+      } catch (error) {
+        console.error("Failed to submit test:", error);
+      } finally {
+        setIsSubmitting(false);
+        console.log("Submission process completed");
+      }
+    },
+    [
+      testType,
+      questions,
+      selectedAnswers,
+      answeredQuestions,
+      testId,
+      params.testId,
+      testData,
+      simulationTestData,
+    ]
+  );
 
   //submit confirmation
   const confirmSubmit = () => {
@@ -456,7 +474,7 @@ export default function TestPage() {
       if (cachedSimulationData) {
         const parsedData = JSON.parse(cachedSimulationData);
         console.log("Using simulationTestData from localStorage", parsedData);
-        
+
         if (parsedData.singleQuestion || parsedData.multipleQuestion) {
           setSimulationTestData(parsedData);
           const allQuestions = [
@@ -472,7 +490,9 @@ export default function TestPage() {
           setQuestions(formattedQuestions);
           setIsTimed(true);
           setDuration(parsedData.duration || 0);
-          const createdAt = new Date(parsedData.createdAt || Date.now()).getTime();
+          const createdAt = new Date(
+            parsedData.createdAt || Date.now()
+          ).getTime();
           const currentTime = Date.now();
           const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
           const remainingSeconds = Math.max(
@@ -540,10 +560,12 @@ export default function TestPage() {
             ...(data.data.singleQuestion || []),
             ...(data.data.multipleQuestion || []),
           ];
-          setQuestions(allQuestions); 
+          setQuestions(allQuestions);
           setIsTimed(true);
           setDuration(data.data.duration);
-          const createdAt = new Date(data.data.createdAt || Date.now()).getTime();
+          const createdAt = new Date(
+            data.data.createdAt || Date.now()
+          ).getTime();
           const currentTime = Date.now();
           const elapsedSeconds = Math.floor((currentTime - createdAt) / 1000);
           const remainingSeconds = Math.max(
@@ -796,11 +818,11 @@ export default function TestPage() {
     };
 
     // Add event listener
-    window.addEventListener('logo-click', handleLogoClick);
+    window.addEventListener("logo-click", handleLogoClick);
 
     // Cleanup
     return () => {
-      window.removeEventListener('logo-click', handleLogoClick);
+      window.removeEventListener("logo-click", handleLogoClick);
     };
   }, []);
 
@@ -816,15 +838,15 @@ export default function TestPage() {
       `testData_${params.testId}`,
       `simulationTestData_${params.testId}`,
     ];
-    
-    testProgressKeys.forEach(key => localStorage.removeItem(key));
-    
+
+    testProgressKeys.forEach((key) => localStorage.removeItem(key));
+
     // Reset context if needed
     setSimulationTestData(null);
     setTestData(null);
-    
+
     // Navigate to home
-    router.push('/');
+    router.push("/");
   };
 
   if (isLoading || questions.length === 0) {
@@ -841,7 +863,6 @@ export default function TestPage() {
   const handleCloseDialog = () => {
     setShowDialog(false);
 
-    
     // Ensure we have a valid testType before redirecting
     const validTestType = testType || (testData?.testType ?? "NOTIMER");
 
@@ -1097,7 +1118,9 @@ export default function TestPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
             <h2 className="text-2xl font-bold mb-4">Exit Test</h2>
-            <p className="mb-4">Do you want to discontinue the test? All progress will be lost.</p>
+            <p className="mb-4">
+              Do you want to discontinue the test? All progress will be lost.
+            </p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowExitDialog(false)}
