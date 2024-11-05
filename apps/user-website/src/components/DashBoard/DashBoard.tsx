@@ -61,6 +61,9 @@ export default function Home() {
   const [previousPapersCategories, setPreviousPapersCategories] = useState<
     Array<{ id: string; name: string; questionCount: number }>
   >([]);
+  const [isNavigatingToHistory, setIsNavigatingToHistory] = useState(false);
+  const [isNavigatingToTopics, setIsNavigatingToTopics] = useState(false);
+  const [isLoadingPreviousPapers, setIsLoadingPreviousPapers] = useState(false);
 
   useEffect(() => {
     setTestData(null);
@@ -355,6 +358,7 @@ export default function Home() {
   };
 
   const fetchPreviousPapersCategories = async () => {
+    setIsLoadingPreviousPapers(true);
     try {
       const response = await fetch("/api/categorys?isPrevTopic=true", {
         method: "GET",
@@ -362,7 +366,6 @@ export default function Home() {
           "Cache-Control": "no-store",
         },
       });
-      console.log("response", response);
       const data = await response.json();
       if (data.err === false) {
         setPreviousPapersCategories(data.data);
@@ -372,6 +375,8 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching previous papers categories:", error);
       setError("An error occurred while fetching previous papers categories");
+    } finally {
+      setIsLoadingPreviousPapers(false);
     }
   };
 
@@ -380,6 +385,7 @@ export default function Home() {
       fetchPreviousPapersCategories();
     }
   }, [showPreviousPapersDialog]);
+  
 
   const filteredPreviousPapersCategories = previousPapersCategories.filter(
     (category) =>
@@ -552,12 +558,24 @@ export default function Home() {
                 View stats and past test results
               </p>
               <button
-                onClick={() => {
-                  router.push("/history");
+                onClick={async () => {
+                  setIsNavigatingToHistory(true);
+                  await router.push("/history");
                 }}
-                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                disabled={isNavigatingToHistory}
+                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                History
+                {isNavigatingToHistory ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </span>
+                ) : (
+                  "History"
+                )}
               </button>
             </div>
 
@@ -583,41 +601,26 @@ export default function Home() {
                 Explore various learning topics
               </p>
               <button
-                onClick={() => router.push("/topics")}
-                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                onClick={async () => {
+                  setIsNavigatingToTopics(true);
+                  await router.push("/topics");
+                }}
+                disabled={isNavigatingToTopics}
+                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Start
+                {isNavigatingToTopics ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </span>
+                ) : (
+                  "Start"
+                )}
               </button>
             </div>
-
-            {/* <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <svg
-                  className="w-6 h-6 text-yellow-500 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <h2 className="text-xl font-semibold">Learning History</h2>
-              </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                View your learning progress
-              </p>
-              <button
-                onClick={() => router.push("/learninghistory")}
-                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                View History
-              </button>
-            </div> */}
           </div>
         )}
       </div>
@@ -1472,47 +1475,60 @@ export default function Home() {
             <h2 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">
               Previous Papers Categories
             </h2>
-            <input
-              type="text"
-              placeholder="Search categories..."
-              value={previousPapersSearchTerm}
-              onChange={(e) => setPreviousPapersSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
-            />
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {filteredPreviousPapersCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedPreviousPaperCategory(category.id)}
-                  className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
-                    selectedPreviousPaperCategory === category.id
-                      ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
-                      : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
-                  }`}
-                >
-                  <span>{category.name}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {category.questionCount} questions
-                  </span>
-                  {selectedPreviousPaperCategory === category.id && (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-blue-500 dark:text-blue-300"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+            
+            {isLoadingPreviousPapers ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <svg className="animate-spin h-8 w-8 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p className="text-gray-600 dark:text-gray-300">Loading categories...</p>
+              </div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={previousPapersSearchTerm}
+                  onChange={(e) => setPreviousPapersSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 mb-4 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-black dark:text-white"
+                />
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {filteredPreviousPapersCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedPreviousPaperCategory(category.id)}
+                      className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
+                        selectedPreviousPaperCategory === category.id
+                          ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
+                          : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
+                      }`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
+                      <span>{category.name}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {category.questionCount} questions
+                      </span>
+                      {selectedPreviousPaperCategory === category.id && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6 text-blue-500 dark:text-blue-300"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <button
               onClick={startPreviousPaperTest}
               className={`mt-8 w-full px-4 py-3 rounded-md transition duration-200 ease-in-out flex items-center justify-center ${
