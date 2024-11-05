@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "npm i && cd ../../packages/db/ && npm i && npx prisma generate && cd ../../apps/admin-website/ && next build",
-    "start": "next start",
+    "build": "npm i && cd ../../packages/db/ && npm i && NODE_ENV=production npx prisma generate --no-engine && cd ../../apps/admin-website/ && next build",
+    "start": "next start -p 3001",
     "lint": "next lint"
   },
   "dependencies": {

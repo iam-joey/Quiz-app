@@ -15,7 +15,7 @@ const ITEMS_PER_PAGE = 50;
 
 export const dynamic = "force-dynamic";
 
-async function QuestionsPage({
+export default async function QuestionsPage({
   params,
   searchParams,
 }: {
@@ -29,14 +29,16 @@ async function QuestionsPage({
     currentPage
   );
 
-  const totalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
+  const totalPages = response.totalPages;
+
   return (
     <div className="container mx-auto p-4">
       <Suspense fallback={<div className="text-center">Loading...</div>}>
         <QuestionsView
-          mockQuestions={response.data || []}
+          initialQuestions={response.data || []}
           categoryId={params.topicid}
-          totalQuestions={response.total.toString()}
+          initialTotalQuestions={response.total.toString()}
+          itemsPerPage={ITEMS_PER_PAGE}
         />
       </Suspense>
       {response.total > ITEMS_PER_PAGE && (
@@ -77,5 +79,3 @@ async function QuestionsPage({
     </div>
   );
 }
-
-export default QuestionsPage;

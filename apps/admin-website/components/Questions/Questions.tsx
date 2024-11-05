@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +8,7 @@ import { Upload, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Search from "../Search/Search";
 import { useRouter } from "next/navigation";
+import { getQuestionsRange } from "@/src/lib/actions";
 
 type Choice = {
   id: string;
@@ -29,16 +29,21 @@ type Question = {
   choice: Choice[];
 };
 
+export const dynamic = "force-dynamic";
+
 export default function AdminDashboard({
-  mockQuestions,
+  initialQuestions,
   categoryId,
-  totalQuestions,
+  initialTotalQuestions,
+  itemsPerPage,
 }: {
-  mockQuestions: Question[];
+  initialQuestions: Question[];
   categoryId: string;
-  totalQuestions: string;
+  initialTotalQuestions: string;
+  itemsPerPage: number;
 }) {
-  const [questions, setQuestions] = useState<Question[]>(mockQuestions);
+  const [questions, setQuestions] = useState<Question[]>(initialQuestions);
+  const [totalQuestions, setTotalQuestions] = useState(initialTotalQuestions);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -85,6 +90,9 @@ export default function AdminDashboard({
       toast.dismiss(id);
       toast.success(result.message);
       setUploading(false);
+
+      // Fetch the updated questions
+      await fetchUpdatedQuestions();
     } catch (error) {
       toast.dismiss(id);
       toast.error("Something went wrong while uploading the csv file");
@@ -92,10 +100,25 @@ export default function AdminDashboard({
     }
   };
 
+  const fetchUpdatedQuestions = async () => {
+    try {
+      const response = await getQuestionsRange(categoryId, itemsPerPage, 1);
+      setQuestions(response.data);
+      setTotalQuestions(response.total.toString());
+    } catch (error) {
+      console.error("Error fetching updated questions:", error);
+      toast.error("Failed to fetch updated questions");
+    }
+  };
+
   const handleQuestionClick = (questionId: string) => {
     setLoadingQuestionId(questionId);
     router.push(`/viewtopic/${questionId}`);
   };
+
+  useEffect(() => {
+    // You can add any additional side effects here if needed
+  }, [questions, totalQuestions]);
 
   return (
     <div className="container mx-auto p-4">

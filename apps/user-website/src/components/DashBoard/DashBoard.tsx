@@ -71,20 +71,22 @@ export default function Home() {
     setLearningTopicData(null);
 
     // Clear all learning-related data from local storage
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('testData_') ||
-          key.startsWith('simulationTestData_') ||
-          key.startsWith('testProgress_') ||
-          key === 'currentPageNumber' ||
-          key === 'currentTopicId' ||
-          key === 'currentTopicIndex' ||
-          key === 'lastActiveTopicIndex' ||
-          key === 'lastSavedTime' ||
-          key === 'learningTopicState' ||
-          key === 'topicsData' ||
-          key === 'topicsOrder' ||
-          key === 'topicsProgress' ||
-          key === 'nextauth.message') {
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.startsWith("testData_") ||
+        key.startsWith("simulationTestData_") ||
+        key.startsWith("testProgress_") ||
+        key === "currentPageNumber" ||
+        key === "currentTopicId" ||
+        key === "currentTopicIndex" ||
+        key === "lastActiveTopicIndex" ||
+        key === "lastSavedTime" ||
+        key === "learningTopicState" ||
+        key === "topicsData" ||
+        key === "topicsOrder" ||
+        key === "topicsProgress" ||
+        key === "nextauth.message"
+      ) {
         localStorage.removeItem(key);
       }
     });
@@ -660,10 +662,8 @@ export default function Home() {
                     : "text-black dark:text-white hover:bg-blue-50 dark:hover:bg-blue-800"
                 }`}
               >
-                <span>Previous Papers</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Coming Soon
-                </span>
+                <span>Previous years exam subjects</span>
+
                 {selectedCategory === "previous_papers" && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

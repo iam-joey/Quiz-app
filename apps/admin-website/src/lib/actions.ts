@@ -130,7 +130,7 @@ export async function getQuestionsRange(
     });
 
     const totalPages = Math.ceil(totalQuestions / limit);
-
+    revalidatePath(`/topics/${topicId}`);
     return {
       data,
       total: totalQuestions,

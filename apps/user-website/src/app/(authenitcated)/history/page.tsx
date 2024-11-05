@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +28,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TopicInfo = {
   name: string;
@@ -43,6 +49,7 @@ type NormalTest = {
   testType: "TIMER" | "NOTIMER";
   createdAt: string;
 };
+
 type LearningHistoryItem = {
   id: string;
   userId: string;
@@ -109,8 +116,8 @@ const niceNames = [
 const generateMockData = (count: number): Participant[] => {
   return Array.from({ length: count }, (_, i) => ({
     id: `mock-${1000 + i}`,
-    name: niceNames[Math.floor(Math.random() * niceNames.length)] || "Unknown", // Select a random name or default to "Unknown"
-    grade: +(Math.random() * 5 + 5).toFixed(2).toString(), // Random grade between 5.00 and 10.00
+    name: niceNames[Math.floor(Math.random() * niceNames.length)] || "Unknown",
+    grade: +(Math.random() * 5 + 5).toFixed(2),
   })).sort((a, b) => b.grade - a.grade);
 };
 
@@ -127,6 +134,21 @@ const MedalIcon = ({ rank }: { rank: number }) => {
   }
 };
 
+const months = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
 export default function TestList() {
   const [test, setTest] = useState<UserTestData>();
   const router = useRouter();
@@ -141,6 +163,14 @@ export default function TestList() {
   );
   const [isLoadingLearningHistory, setIsLoadingLearningHistory] =
     useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2019 }, (_, i) =>
+    (2020 + i).toString()
+  );
 
   const handleTestClick = (
     testId: string,
@@ -187,29 +217,42 @@ export default function TestList() {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = async (month?: string, year?: string) => {
+    setIsLoading(true);
     const loadingId = toast.loading("Loading info");
     try {
-      const response = await fetch(
-        `/api/testhistory/${(session.data?.user as any)?.id}`
-      );
-      if (!response.ok) {
+      const userId = (session.data?.user as any)?.id;
+      if (!userId) {
         toast.dismiss(loadingId);
-        toast.error("Failed fetching data");
+        toast.error("User not authenticated");
         return;
+      }
+
+      let url = `/api/testhistory/${userId}`;
+      if (month && year) {
+        url += `?month=${month}-${year.slice(-2)}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed fetching data");
       }
       const result = await response.json();
       if (result.err) {
-        toast.dismiss(loadingId);
-        toast.error(`${result.msg}`);
-        return;
+        throw new Error(result.msg);
       }
       setTest(result.data);
       toast.dismiss(loadingId);
       toast.success(`${result.msg}`);
     } catch (error) {
       toast.dismiss(loadingId);
-      toast.error("An error occurred while fetching data");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while fetching data"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -246,13 +289,11 @@ export default function TestList() {
       }
       let leaderboardData = result.data;
 
-      // If we have fewer than 50 participants, mock the rest
       if (leaderboardData.length < 50) {
         const mockedData = generateMockData(50 - leaderboardData.length);
         leaderboardData = [...leaderboardData, ...mockedData];
       }
 
-      // Sort the combined data
       leaderboardData.sort(
         (a: Participant, b: Participant) => b.grade - a.grade
       );
@@ -278,9 +319,17 @@ export default function TestList() {
       fetchLearningHistory();
     }
   }, [session.data?.user?.id]);
+
   const handleTopicClick = (topicId: string) => {
     router.push(`/learningTopic/${topicId}`);
   };
+
+  const handleApplyFilters = () => {
+    if (selectedMonth && selectedYear) {
+      fetchData(selectedMonth, selectedYear);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-8">
       <motion.div
@@ -367,7 +416,9 @@ export default function TestList() {
                             </TableCell>
                             <TableCell>{participant.name}</TableCell>
                             <TableCell className="text-right font-semibold">
-                              {parseFloat(participant.grade).toFixed(2)}
+                              {typeof participant.grade === "number"
+                                ? participant.grade.toFixed(2)
+                                : "N/A"}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -396,7 +447,7 @@ export default function TestList() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowTestHistory(!showTestHistory)}
-                className="transition-all duration-300 ease-in-out transform hover:scale-105"
+                className="transition-all duration-300  ease-in-out transform hover:scale-105"
               >
                 {showTestHistory ? (
                   <ChevronUp className="h-4 w-4" />
@@ -413,165 +464,218 @@ export default function TestList() {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {test?.UserTestDetail && test.UserTestDetail.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-xl font-semibold mb-4">
-                        Normal Tests
-                      </h3>
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {test.UserTestDetail.map((test, index) => (
-                          <motion.div
-                            key={test.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                          >
-                            <Card
-                              className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-900 overflow-hidden transform hover:scale-105"
-                              onClick={() =>
-                                handleTestClick(
-                                  test.id,
-                                  test.isCompleted,
-                                  test.testType
-                                )
-                              }
-                            >
-                              <CardContent className="p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h4 className="font-medium text-lg text-gray-800 dark:text-gray-200">
-                                    {test.category?.name}
-                                  </h4>
-                                  <Badge
-                                    variant={
-                                      test.isCompleted
-                                        ? "success"
-                                        : "destructive"
-                                    }
-                                    className="text-xs"
-                                  >
-                                    {test.isCompleted ? (
-                                      <CheckCircle className="w-3 h-3 mr-1" />
-                                    ) : (
-                                      <XCircle className="w-3 h-3 mr-1" />
-                                    )}
-                                    {test.isCompleted
-                                      ? "Completed"
-                                      : "Incomplete"}
-                                  </Badge>
-                                </div>
-                                <div className="mt-2 mb-3">
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    Score:{" "}
-                                    <span className="font-semibold text-lg">
-                                      {test.correctAnswers || "0"}/
-                                      {test.numberOfQuestions}
-                                    </span>
-                                  </p>
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {formatDateTime(test.createdAt)}
-                                </div>
-                                <div className="flex justify-end mt-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-xs"
-                                  >
-                                    View Details
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
+                  <div className="flex items-center space-x-4 mb-4">
+                    <Select
+                      onValueChange={setSelectedMonth}
+                      value={selectedMonth}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select month" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((month) => (
+                          <SelectItem key={month} value={month}>
+                            {month.charAt(0).toUpperCase() + month.slice(1)}
+                          </SelectItem>
                         ))}
-                      </div>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      onValueChange={setSelectedYear}
+                      value={selectedYear}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleApplyFilters}
+                      disabled={!selectedMonth || !selectedYear || isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : null}
+                      Apply Filters
+                    </Button>
+                  </div>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
+                  ) : test &&
+                    (test.UserTestDetail.length > 0 ||
+                      test.SimulationTestDetail.length > 0) ? (
+                    <>
+                      {test.UserTestDetail &&
+                        test.UserTestDetail.length > 0 && (
+                          <div className="mb-6">
+                            <h3 className="text-xl font-semibold mb-4">
+                              Normal Tests
+                            </h3>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                              {test.UserTestDetail.map((test, index) => (
+                                <motion.div
+                                  key={test.id}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{
+                                    duration: 0.3,
+                                    delay: index * 0.1,
+                                  }}
+                                >
+                                  <Card
+                                    className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-900 overflow-hidden transform hover:scale-105"
+                                    onClick={() =>
+                                      handleTestClick(
+                                        test.id,
+                                        test.isCompleted,
+                                        test.testType
+                                      )
+                                    }
+                                  >
+                                    <CardContent className="p-4">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-medium text-lg text-gray-800 dark:text-gray-200">
+                                          {test.category?.name}
+                                        </h4>
+                                        <Badge
+                                          variant={
+                                            test.isCompleted
+                                              ? "success"
+                                              : "destructive"
+                                          }
+                                          className="text-xs"
+                                        >
+                                          {test.isCompleted ? (
+                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                          ) : (
+                                            <XCircle className="w-3 h-3 mr-1" />
+                                          )}
+                                          {test.isCompleted
+                                            ? "Completed"
+                                            : "Incomplete"}
+                                        </Badge>
+                                      </div>
+                                      <div className="mt-2 mb-3">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                          Score:{" "}
+                                          <span className="font-semibold text-lg">
+                                            {test.correctAnswers || "0"}/
+                                            {test.numberOfQuestions}
+                                          </span>
+                                        </p>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {formatDateTime(test.createdAt)}
+                                      </div>
+                                      <div className="flex justify-end mt-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-xs"
+                                        >
+                                          View Details
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {test.SimulationTestDetail &&
+                        test.SimulationTestDetail.length > 0 && (
+                          <div>
+                            <h3 className="text-xl font-semibold mb-4">
+                              Simulation Tests
+                            </h3>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                              {test.SimulationTestDetail.map((test, index) => (
+                                <motion.div
+                                  key={test.id}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{
+                                    duration: 0.3,
+                                    delay: index * 0.1,
+                                  }}
+                                >
+                                  <Card
+                                    className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-900 overflow-hidden transform hover:scale-105"
+                                    onClick={() =>
+                                      handleTestClick(
+                                        test.id,
+                                        test.isCompleted,
+                                        test.testType
+                                      )
+                                    }
+                                  >
+                                    <CardContent className="p-4">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-medium text-lg text-gray-800 dark:text-gray-200">
+                                          Simulation Test
+                                        </h4>
+                                        <Badge
+                                          variant={
+                                            test.isCompleted
+                                              ? "success"
+                                              : "destructive"
+                                          }
+                                          className="text-xs"
+                                        >
+                                          {test.isCompleted ? (
+                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                          ) : (
+                                            <XCircle className="w-3 h-3 mr-1" />
+                                          )}
+                                          {test.isCompleted
+                                            ? "Completed"
+                                            : "Incomplete"}
+                                        </Badge>
+                                      </div>
+                                      <div className="mt-2 mb-3">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                          Score:{" "}
+                                          <span className="font-semibold text-lg">
+                                            {test.correctAnswers}/
+                                            {test.numberOfQuestions}
+                                          </span>
+                                        </p>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {formatDateTime(test.createdAt)}
+                                      </div>
+                                      <div className="flex justify-end mt-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-xs"
+                                        >
+                                          View Details
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                    </>
+                  ) : (
+                    <p className="text-center text-gray-600 dark:text-gray-400 mt-6">
+                      You didn't perform any tests during this period.
+                    </p>
                   )}
-
-                  {test?.SimulationTestDetail &&
-                    test.SimulationTestDetail.length > 0 && (
-                      <div>
-                        <h3 className="text-xl font-semibold mb-4">
-                          Simulation Tests
-                        </h3>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                          {test.SimulationTestDetail.map((test, index) => (
-                            <motion.div
-                              key={test.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.3, delay: index * 0.1 }}
-                            >
-                              <Card
-                                className="cursor-pointer hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-900 overflow-hidden transform hover:scale-105"
-                                onClick={() =>
-                                  handleTestClick(
-                                    test.id,
-                                    test.isCompleted,
-                                    test.testType
-                                  )
-                                }
-                              >
-                                <CardContent className="p-4">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <h4 className="font-medium text-lg text-gray-800 dark:text-gray-200">
-                                      Simulation Test
-                                    </h4>
-                                    <Badge
-                                      variant={
-                                        test.isCompleted
-                                          ? "success"
-                                          : "destructive"
-                                      }
-                                      className="text-xs"
-                                    >
-                                      {test.isCompleted ? (
-                                        <CheckCircle className="w-3 h-3 mr-1" />
-                                      ) : (
-                                        <XCircle className="w-3 h-3 mr-1" />
-                                      )}
-                                      {test.isCompleted
-                                        ? "Completed"
-                                        : "Incomplete"}
-                                    </Badge>
-                                  </div>
-                                  <div className="mt-2 mb-3">
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                      Score:{" "}
-                                      <span className="font-semibold text-lg">
-                                        {test.correctAnswers}/
-                                        {test.numberOfQuestions}
-                                      </span>
-                                    </p>
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {formatDateTime(test.createdAt)}
-                                  </div>
-                                  <div className="flex justify-end mt-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="text-xs"
-                                    >
-                                      View Details
-                                    </Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                  {(!test?.UserTestDetail ||
-                    test.UserTestDetail.length === 0) &&
-                    (!test?.SimulationTestDetail ||
-                      test.SimulationTestDetail.length === 0) && (
-                      <p className="text-center text-gray-600 dark:text-gray-400 mt-6">
-                        You haven't participated in any tests yet.
-                      </p>
-                    )}
                 </motion.div>
               )}
             </AnimatePresence>

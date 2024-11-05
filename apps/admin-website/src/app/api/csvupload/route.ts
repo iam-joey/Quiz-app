@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parse } from "csv-parse/sync";
 import prisma from "@repo/db/client";
+import { revalidatePath } from "next/cache";
 
 // Define types for the parsed CSV data
 type CsvRecord = {
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
     });
 
     await prisma.$transaction(answerUpdates);
-
+    revalidatePath(`/topics/${categoryId}`);
     return NextResponse.json({
       message: "Questions, choices, and levels uploaded successfully",
     });
