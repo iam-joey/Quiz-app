@@ -1,7 +1,7 @@
 import prisma from "@repo/db/client";
 import { NextRequest, NextResponse } from "next/server";
 
-// export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 export const GET = async (
   req: NextRequest,
@@ -38,6 +38,7 @@ export const GET = async (
               },
               answer: true,
               level: true,
+              paragraph: true,
             },
           },
           duration: true,
@@ -102,6 +103,7 @@ export const GET = async (
               },
               answer: true,
               level: true, // Include level for each question
+              paragraph: true,
             },
           },
           multipleQuestion: {
@@ -116,6 +118,7 @@ export const GET = async (
               },
               answer: true,
               level: true, // Include level for each question
+              paragraph: true,
             },
           },
           userAnswers: true,

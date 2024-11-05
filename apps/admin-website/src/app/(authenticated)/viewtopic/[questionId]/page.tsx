@@ -82,6 +82,29 @@ function ParagraphDialog({
     }
   };
 
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      [{ size: ["small", false, "large", "huge"] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ color: [] }],
+      ["clean"],
+    ],
+  };
+
+  const formats = [
+    "header",
+    "size",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "color",
+  ];
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
@@ -112,33 +135,15 @@ function ParagraphDialog({
               <ReactQuill
                 value={content}
                 onChange={onChange}
-                modules={{
-                  toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    [{ size: ["small", false, "large", "huge"] }],
-                    ["bold", "italic", "underline", "strike"],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    [{ color: [] }],
-                    ["clean"],
-                  ],
-                }}
-                formats={[
-                  "header",
-                  "size",
-                  "bold",
-                  "italic",
-                  "underline",
-                  "strike",
-                  "list",
-                  "bullet",
-                  "color",
-                ]}
+                modules={modules}
+                formats={formats}
+                theme="snow"
                 style={{ height: "100%" }}
               />
             </div>
           ) : (
             <div
-              className="prose prose-sm max-w-none dark:prose-invert overflow-y-auto"
+              className="prose prose-sm max-w-none dark:prose-invert overflow-y-auto ql-editor custom-quill-content"
               style={{
                 height: "calc(90vh - 120px)",
                 padding: "1rem",
