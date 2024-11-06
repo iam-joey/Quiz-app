@@ -13,6 +13,5 @@ export default function TestResultsPage() {
     testId: params.testId as string,
     testType: searchParams.get("testType") as string,
   };
-  console.log(testResultsProps);
   return <TestResults {...testResultsProps} />;
 }

@@ -646,7 +646,7 @@ export default function TestList() {
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                           Score:{" "}
                                           <span className="font-semibold text-lg">
-                                            {test.correctAnswers}/
+                                            {test.correctAnswers || "0"}/
                                             {test.numberOfQuestions}
                                           </span>
                                         </p>

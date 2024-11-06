@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Upload } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { getTopicDoc } from "@/src/lib/actions";
 
@@ -58,7 +58,7 @@ export default function PdfUploader({
 
     try {
       const base64File = await convertFileToBase64(file, (progress) => {
-        setUploadProgress(progress * 50); // File reading progress (0-50%)
+        setUploadProgress(progress * 50);
       });
 
       const response = await fetch(`/api/docupload`, {
@@ -165,7 +165,6 @@ export default function PdfUploader({
           {loading && <Progress value={uploadProgress} className="w-full" />}
         </form>
       </CardContent>
-      <Toaster position="bottom-right" />
     </Card>
   );
 }

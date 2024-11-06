@@ -326,7 +326,7 @@ const TestResults: React.FC<TestResultsProps> = ({ testId, testType }) => {
                           />
                         </button>
                         {expandedExplanations[question.id] && (
-                          <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded">
+                          <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-700 rounded border border-red-400">
                             <ParagraphViewer content={question.paragraph} />{" "}
                           </div>
                         )}
@@ -584,13 +584,36 @@ interface ParagraphViewerProps {
   content: string;
 }
 function ParagraphViewer({ content }: ParagraphViewerProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState<number | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (contentRef.current) {
+        const newHeight = contentRef.current.scrollHeight;
+        setContentHeight(newHeight);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [content]);
+
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div className="mt-2 p-4 rounded bg-white text-black">
         <div
-          className="prose prose-sm max-w-none dark:prose-invert overflow-y-auto ql-editor custom-quill-content "
+          ref={contentRef}
+          className="prose prose-sm max-w-none dark:prose-invert overflow-y-auto ql-editor custom-quill-content"
           style={{
-            height: "calc(90vh - 120px)",
+            height: contentHeight ? `${contentHeight}px` : "auto",
+            maxHeight: "calc(90vh - 120px)",
             padding: "1rem",
             backgroundColor: "var(--background)",
             borderRadius: "0.5rem",
