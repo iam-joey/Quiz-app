@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useTestContext } from "@/components/context/TestContext";
 import { useSimulationTestContext } from "@/components/context/SimulationTestContext";
 import { useLearningTopic } from "@/components/context/LearningTopicContext";
+import { Users } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
@@ -387,7 +388,6 @@ export default function Home() {
       fetchPreviousPapersCategories();
     }
   }, [showPreviousPapersDialog]);
-  
 
   const filteredPreviousPapersCategories = previousPapersCategories.filter(
     (category) =>
@@ -466,16 +466,26 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white p-4">
       <div className="w-full max-w-3xl">
         <div className="flex mb-6">
-          <button
+          <div
             onClick={() => setActiveTab("Tests")}
-            className={`flex-1 py-2 text-center ${
+            className={`flex justify-between w-full py-2 px-4 text-center ${
               activeTab === "Tests"
-                ? "bg-blue-600 text-white"
+                ? "bg-blue-600 text-white border "
                 : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
             }`}
           >
-            Tests
-          </button>
+            <div className="flex-1">Tests</div>
+            <div className="flex items-center">
+              <div className="flex items-center text-sm ml-10">
+                <span className="text-xl text-white mr-2">Users Online :</span>
+                <Users className="w-4 h-4 mr-1 text-green-400" />
+                <span className="font-medium text-green-400 transition-all duration-1000 ease-out">
+                  200
+                </span>
+                <span className="sr-only">online users</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {activeTab === "Tests" && (
@@ -569,9 +579,25 @@ export default function Home() {
               >
                 {isNavigatingToHistory ? (
                   <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Loading...
                   </span>
@@ -612,9 +638,25 @@ export default function Home() {
               >
                 {isNavigatingToTopics ? (
                   <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Loading...
                   </span>
@@ -1475,14 +1517,32 @@ export default function Home() {
             <h2 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">
               Previous Papers Categories
             </h2>
-            
+
             {isLoadingPreviousPapers ? (
               <div className="flex flex-col items-center justify-center py-8">
-                <svg className="animate-spin h-8 w-8 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin h-8 w-8 text-blue-500 mb-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
-                <p className="text-gray-600 dark:text-gray-300">Loading categories...</p>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Loading categories...
+                </p>
               </div>
             ) : (
               <>
@@ -1497,7 +1557,9 @@ export default function Home() {
                   {filteredPreviousPapersCategories.map((category) => (
                     <button
                       key={category.id}
-                      onClick={() => setSelectedPreviousPaperCategory(category.id)}
+                      onClick={() =>
+                        setSelectedPreviousPaperCategory(category.id)
+                      }
                       className={`w-full px-4 py-3 text-left text-lg rounded-md transition duration-200 ease-in-out flex justify-between items-center ${
                         selectedPreviousPaperCategory === category.id
                           ? "bg-blue-100 dark:bg-blue-700 text-black dark:text-white font-semibold"
