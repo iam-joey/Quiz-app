@@ -11,7 +11,7 @@ import { toast, Toaster } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { getTopicDoc } from "@/src/lib/actions";
 
-export default function DocxUploader({
+export default function PdfUploader({
   params,
 }: {
   params: {
@@ -39,14 +39,10 @@ export default function DocxUploader({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
-    if (
-      selectedFile &&
-      selectedFile.type ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
+    if (selectedFile && selectedFile.type === "application/pdf") {
       setFile(selectedFile);
     } else {
-      toast.error("Please select a valid .docx file");
+      toast.error("Please select a valid PDF file");
     }
   };
 
@@ -138,16 +134,16 @@ export default function DocxUploader({
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Upload DOCX File for Topic</CardTitle>
+        <CardTitle>Upload PDF File for Topic</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="file">Select DOCX File</Label>
+            <Label htmlFor="file">Select PDF File</Label>
             <Input
               id="file"
               type="file"
-              accept=".docx"
+              accept=".pdf"
               onChange={handleFileChange}
               disabled={loading}
               required
