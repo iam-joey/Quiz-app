@@ -2,6 +2,7 @@
 import prisma from "@repo/db/client";
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
+import { prism } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export async function createAdmin(email: string, pwd: string) {
   try {
@@ -582,6 +583,12 @@ export async function deleteTopicDoc(topicId: string) {
         msg: "Topic not found",
       };
     }
+
+    await prisma.userLearningTopicIdsDetails.deleteMany({
+      where: {
+        topicId: topicId,
+      },
+    });
 
     await prisma.topic.delete({
       where: {

@@ -6,7 +6,6 @@ import { PDFDocument } from "pdf-lib";
 
 //api/docupload this is the api endpoint that is called when a user uploads a document to a topic. The document is stored in an S3 bucket and the topic is updated with the document's filename and page count.
 
-// Function to count pages in a PDF
 async function getPageCountFromPdf(pdfBuffer: Buffer): Promise<number> {
   const pdfDoc = await PDFDocument.load(pdfBuffer);
   return pdfDoc.getPageCount();

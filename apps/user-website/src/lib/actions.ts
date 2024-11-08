@@ -63,6 +63,7 @@ export async function getProfile(userId: string) {
         workPlace: true,
         university: true,
         promotion: true,
+        image: true,
       },
     });
     if (!findUser) {

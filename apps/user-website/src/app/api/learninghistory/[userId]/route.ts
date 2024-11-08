@@ -22,6 +22,9 @@ export const GET = async (
     const userReadingHistory = await prisma.userLearningHistory.findMany({
       where: {
         userId: userId,
+        userTopics: {
+          some: {},
+        },
       },
       include: {
         userTopics: {
