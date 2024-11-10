@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { NextResponse } from "next/server";
 
 const redisCache = RedisCache.getInstance();
+export const dynamic = "force-dynamic";
 
 export const GET = async () => {
   try {

@@ -2,6 +2,7 @@ import RedisCache from "@/src/lib/cache/redisservice";
 import { NextRequest, NextResponse } from "next/server";
 
 const redisCache = RedisCache.getInstance();
+export const dynamic = "force-dynamic";
 
 export const POST = async (
   req: NextRequest,
