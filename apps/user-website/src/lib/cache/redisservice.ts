@@ -17,6 +17,19 @@ class RedisCache {
     return RedisCache.instance;
   }
 
+  public async refreshUserSession(
+    userId: string,
+    ttl: number = 300
+  ): Promise<void> {
+    await this.client.set(`user:${userId}`, "active", "EX", ttl);
+  }
+
+  public async countActiveUsers(): Promise<number> {
+    const keys = await this.client.keys("user:*");
+    const activeUserCount = keys.length;
+    return activeUserCount > 0 ? 32 + activeUserCount : 32;
+  }
+
   public async set(
     key: string,
     value: any,

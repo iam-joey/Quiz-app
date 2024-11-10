@@ -5,6 +5,7 @@ import { Providers } from "@/src/providers/Providers";
 import { TestProvider } from "@/components/context/TestContext";
 import { SimulationTestProvider } from "@/components/context/SimulationTestContext";
 import { LearningTopicProvider } from "@/components/context/LearningTopicContext";
+import { ActiveUserProvider } from "@/src/components/context/ActiveUserContext";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -20,14 +21,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="bg-white dark:bg-gray-900 text-black dark:text-white">
         <Providers>
-          <TestProvider>
-            <SimulationTestProvider>
-              <LearningTopicProvider>
-                <NavBar />
-                {children}
-              </LearningTopicProvider>
-            </SimulationTestProvider>
-          </TestProvider>
+          <ActiveUserProvider>
+            <TestProvider>
+              <SimulationTestProvider>
+                <LearningTopicProvider>
+                  <NavBar />
+                  {children}
+                </LearningTopicProvider>
+              </SimulationTestProvider>
+            </TestProvider>
+          </ActiveUserProvider>
         </Providers>
       </body>
     </html>

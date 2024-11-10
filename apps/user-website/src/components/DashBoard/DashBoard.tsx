@@ -10,7 +10,7 @@ import { useSimulationTestContext } from "@/components/context/SimulationTestCon
 import { useLearningTopic } from "@/components/context/LearningTopicContext";
 import { Users } from "lucide-react";
 
-export default function Home() {
+export default function Home({ users }: { users: number }) {
   const router = useRouter();
   //@ts-ignore
   const session = useSession(authOptions);
@@ -480,7 +480,7 @@ export default function Home() {
                 <span className="text-xl text-white mr-2">Users Online :</span>
                 <Users className="w-4 h-4 mr-1 text-green-400" />
                 <span className="font-medium text-green-400 transition-all duration-1000 ease-out">
-                  200
+                  {users || "100"}
                 </span>
                 <span className="sr-only">online users</span>
               </div>
