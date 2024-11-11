@@ -312,12 +312,14 @@ export default function TestList() {
   };
 
   useEffect(() => {
+    //@ts-ignore
     if (session.data?.user?.id) {
       fetchData();
       fetchStats();
       fetchLeaderboard();
       fetchLearningHistory();
     }
+    //@ts-ignore
   }, [session.data?.user?.id]);
 
   const handleTopicClick = (topicId: string) => {
@@ -403,10 +405,13 @@ export default function TestList() {
                         {participants.map((participant, index) => (
                           <TableRow
                             key={participant.id}
-                            className={`
+                            className={`cursor-pointer
                               transition-colors
                               ${index < 3 ? "bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800" : "hover:bg-gray-100 dark:hover:bg-gray-800"}
                             `}
+                            onClick={() => {
+                              router.push(`/profile/${participant.id}`);
+                            }}
                           >
                             <TableCell className="font-medium">
                               <div className="flex items-center space-x-2">
@@ -431,7 +436,7 @@ export default function TestList() {
           </CardContent>
         </Card>
       </motion.div>
-
+      {/* This is the part that is different from the snippet in apps/user-website/src/components/LearningHistory/LearningHistory.tsx */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -682,7 +687,7 @@ export default function TestList() {
           </CardContent>
         </Card>
       </motion.div>
-
+      {/* this is the part that is different from the snippet in apps/user-website/src/components/LearningHistory/LearningHistory.tsx */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

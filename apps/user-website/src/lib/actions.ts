@@ -64,6 +64,8 @@ export async function getProfile(userId: string) {
         university: true,
         promotion: true,
         image: true,
+        isPremium: true,
+        email: true,
       },
     });
     if (!findUser) {

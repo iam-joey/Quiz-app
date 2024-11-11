@@ -26,6 +26,7 @@ import {
   BriefcaseIcon,
   GraduationCapIcon,
   MailIcon,
+  CrownIcon,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Toaster, toast } from "sonner";
@@ -46,6 +47,7 @@ interface UserProfile {
   promotion: string | null;
   email: string | null;
   image: string | null;
+  isPremium: boolean;
 }
 
 interface UserProfileUpdate {
@@ -90,6 +92,15 @@ function ProfileField({
           {value || "Not specified"}
         </p>
       </div>
+    </div>
+  );
+}
+
+function PremiumBadge() {
+  return (
+    <div className="flex items-center bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-semibold">
+      <CrownIcon className="w-4 h-4 mr-1" />
+      Premium
     </div>
   );
 }
@@ -146,8 +157,9 @@ export default function UserProfile() {
           setUserProfile({
             ...result.data,
             studyProgram: result.data.studyProgram as Program | null,
-            email: session.user.email || null,
-            image: session.user.image || null,
+            email: result.data.email,
+            image: result.data.image,
+            isPremium: true,
           });
           toast.success(result.msg);
         } else {
@@ -202,9 +214,12 @@ export default function UserProfile() {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <CardTitle className="text-3xl font-bold">
-                  {userProfile.name}
-                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <CardTitle className="text-3xl font-bold">
+                    {userProfile.name}
+                  </CardTitle>
+                  {userProfile.isPremium && <PremiumBadge />}
+                </div>
                 <p className="text-blue-100 dark:text-blue-200 flex items-center">
                   <MailIcon className="w-4 h-4 mr-2" />
                   {userProfile.email}

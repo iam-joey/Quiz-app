@@ -480,7 +480,7 @@ export default function Home({ users }: { users: number }) {
                 <span className="text-xl text-white mr-2">Users Online :</span>
                 <Users className="w-4 h-4 mr-1 text-green-400" />
                 <span className="font-medium text-green-400 transition-all duration-1000 ease-out">
-                  {users || "100"}
+                  {users == 32 ? "loading..." : users}
                 </span>
                 <span className="sr-only">online users</span>
               </div>

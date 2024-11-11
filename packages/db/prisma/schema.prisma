@@ -4,7 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiZjI0Mjk0MjYtMDY5Zi00MzZjLWJlNWEtNDkxNmEyYjM3YTYzIiwidGVuYW50X2lkIjoiNjI5ZWZiY2M1NmE1NmRkNzIzZDQzNWYxNWNiNTdmMGYyZTIyOTk1Y2NmNTUxYzJlNTY1OTI3MWEyNDMyYTdlOSIsImludGVybmFsX3NlY3JldCI6ImQwNmRmMTlmLWI0Y2ItNGE5NS1iYWQ4LTg5NzBkZmNjNmIyMSJ9.FZ6bpBRZ39N_wEUyVvgpz6B5Se_Am2t9wdLY4kZTo6Q"
+    url      = "prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiZjI0Mjk0MjYtMDY5Zi00MzZjLWJlNWEtNDkxNmEyYjM3YTYzIiwidGVuYW50X2lkIjoiNjI5ZWZiY2M1NmE1NmRkNzIzZDQzNWYxNWNiNTdmMGYyZTIyOTk1Y2NmNTUxYzJlNTY1OTI3MWEyNDMyYTdlOSIsImludGVybmFsX3NlY3JldCI6ImQwNmRmMTlmLWI0Y2ItNGE5NS1iYWQ4LTg5NzBkZmNjNmIyMSJ9.FZ6bpBRZ39N_wEUyVvgpz6B5Se_Am2t9wdLY4kZTo6Q"
+
 }
 
 model User {
@@ -19,6 +20,7 @@ model User {
   email                String?                @unique
   emailVerified        DateTime?              @map("email_verified")
   image                String?
+  isPremium            Boolean                @default(false) 
   accounts             Account[]
   sessions             Session[]
   createdAt            DateTime               @default(now())
@@ -27,7 +29,7 @@ model User {
   SimulationTestDetail SimulationTestDetail[]
   Flag                 Flag[]
   UserLearningHistory  UserLearningHistory[]
-
+  
   @@index([id])
 }
 
